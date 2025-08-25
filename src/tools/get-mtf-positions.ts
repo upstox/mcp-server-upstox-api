@@ -1,65 +1,98 @@
 import { z } from "zod";
-import { ToolHandler, ToolResponse, GetMtfPositionsArgs } from "../types";
+import { ToolHandler, ToolResponse } from "../types";
 import { 
   UPSTOX_API_BASE_URL, 
   UPSTOX_API_MTF_POSITIONS_ENDPOINT,
   HEADERS,
   ERROR_MESSAGES
 } from "../constants";
+import { Props, getAccessTokenFromSession } from "../utils";
 
 export const getMtfPositionsSchema = {
-  accessToken: z.string().min(1, "Access token is required"),
+  // No parameters needed - access token comes from session
 };
 
-const GetMtfPositionsArgsSchema = z.object(getMtfPositionsSchema);
-
-interface MtfPosition {
-  exchange: string;
-  multiplier: number;
-  value: number;
-  pnl: number;
-  product: string;
-  instrument_token: string;
-  average_price: number;
-  buy_value: number;
-  overnight_quantity: number;
-  day_buy_value: number;
-  day_buy_price: number;
-  overnight_buy_amount: number;
-  overnight_buy_quantity: number;
-  day_buy_quantity: number;
-  day_sell_value: number;
-  day_sell_price: number;
-  overnight_sell_amount: number;
-  overnight_sell_quantity: number;
-  day_sell_quantity: number;
-  quantity: number;
-  last_price: number;
-  unrealised: number;
-  realised: number;
-  sell_value: number;
-  trading_symbol: string;
-  close_price: number;
-  buy_price: number;
-  sell_price: number;
-}
+const GetMtfPositionsArgsSchema = z.object({});
 
 interface UpstoxMtfPositionsResponse {
   status: string;
-  data: MtfPosition[];
-  metadata: {
-    latency: number;
-  };
+  data: Array<{
+    exchange: string;
+    multiplier: number;
+    value: number;
+    pnl: number;
+    product: string;
+    instrument_token: string;
+    average_price: number;
+    buy_value: number;
+    overnight_quantity: number;
+    day_buy_value: number;
+    day_buy_price: number;
+    overnight_buy_amount: number;
+    overnight_buy_quantity: number;
+    day_buy_quantity: number;
+    day_sell_value: number;
+    day_sell_price: number;
+    overnight_sell_amount: number;
+    overnight_sell_quantity: number;
+    day_sell_quantity: number;
+    quantity: number;
+    last_price: number;
+    unrealised: number;
+    realised: number;
+    sell_value: number;
+    tradingsymbol: string;
+    trading_symbol: string;
+    close_price: number;
+    buy_price: number;
+    sell_price: number;
+  }>;
 }
 
-export const getMtfPositionsHandler: ToolHandler<GetMtfPositionsArgs> = async (args: GetMtfPositionsArgs, extra: { [key: string]: unknown }): Promise<ToolResponse> => {
+export const getMtfPositionsHandler: ToolHandler<{}> = async (args: {}, extra: { [key: string]: unknown }): Promise<ToolResponse> => {
   const validatedArgs = GetMtfPositionsArgsSchema.parse(args);
+  
+  // Get session ID from props
+  const props = extra.props as Props;
+  if (!props?.sessionId) {
+    return {
+      content: [{
+        type: "text",
+        text: "Error: No session ID found. Please authenticate first."
+      }],
+      isError: true
+    };
+  }
+  
+  // Get KV namespace from environment
+  const kv = (extra.env as Env)?.OAUTH_KV;
+  if (!kv) {
+    return {
+      content: [{
+        type: "text",
+        text: "Error: KV store not available."
+      }],
+      isError: true
+    };
+  }
+  
+  // Get access token from session
+  const accessToken = await getAccessTokenFromSession(props.sessionId, kv);
+  if (!accessToken) {
+    return {
+      content: [{
+        type: "text",
+        text: "Error: Session expired or invalid. Please re-authenticate."
+      }],
+      isError: true
+    };
+  }
   
   const response = await fetch(`${UPSTOX_API_BASE_URL}${UPSTOX_API_MTF_POSITIONS_ENDPOINT}`, {
     method: "GET",
     headers: {
       "Accept": HEADERS.ACCEPT,
-      "Authorization": `Bearer ${validatedArgs.accessToken}`
+      "Authorization": `Bearer ${accessToken}`
     }
   });
 

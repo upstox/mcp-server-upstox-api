@@ -1,32 +1,31 @@
 import { z } from "zod";
-import { ToolHandler, ToolResponse } from "./types";
+import { ToolHandler, ToolResponse, GetOrderDetailsArgs } from "../types";
 import { 
   UPSTOX_API_BASE_URL, 
   UPSTOX_API_ORDER_DETAILS_ENDPOINT,
   HEADERS,
   ERROR_MESSAGES
 } from "../constants";
+import { Props, getAccessTokenFromSession } from "../utils";
 
 export const getOrderDetailsSchema = {
-  accessToken: z.string().min(1, "Access token is required"),
-  orderId: z.string().min(1, "Order ID is required"),
+  orderId: z.string()
 };
 
-const GetOrderDetailsArgsSchema = z.object(getOrderDetailsSchema);
+const GetOrderDetailsArgsSchema = z.object({
+  orderId: z.string()
+});
 
-interface OrderDetailsResponse {
+interface UpstoxOrderDetailsResponse {
   status: string;
   data: {
     exchange: string;
-    product: string;
     price: number;
+    product: string;
     quantity: number;
-    status: string;
-    tag: string | null;
     instrument_token: string;
     placed_by: string;
     trading_symbol: string;
-    tradingsymbol: string;
     order_type: string;
     validity: string;
     trigger_price: number;
@@ -35,28 +34,65 @@ interface OrderDetailsResponse {
     average_price: number;
     filled_quantity: number;
     pending_quantity: number;
-    status_message: string | null;
-    status_message_raw: string | null;
-    exchange_order_id: string;
-    parent_order_id: string | null;
+    status: string;
+    status_message: string;
     order_id: string;
-    variety: string;
-    order_timestamp: string;
-    exchange_timestamp: string;
-    is_amo: boolean;
     order_request_id: string;
     order_ref_id: string;
+    order_timestamp: string;
+    parent_order_id: string;
+    modified_quantity: number;
+    modified_price: number;
+    is_amo: boolean;
+    variety: string;
+    tag: string;
   };
 }
 
-export const getOrderDetailsHandler: ToolHandler<{ accessToken: string; orderId: string }> = async (args: { accessToken: string; orderId: string }): Promise<ToolResponse> => {
+export const getOrderDetailsHandler: ToolHandler<GetOrderDetailsArgs> = async (args: GetOrderDetailsArgs, extra: { [key: string]: unknown }): Promise<ToolResponse> => {
   const validatedArgs = GetOrderDetailsArgsSchema.parse(args);
   
-  const response = await fetch(`${UPSTOX_API_BASE_URL}${UPSTOX_API_ORDER_DETAILS_ENDPOINT}?order_id=${validatedArgs.orderId}`, {
+  // Get session ID from props
+  const props = extra.props as Props;
+  if (!props?.sessionId) {
+    return {
+      content: [{
+        type: "text",
+        text: "Error: No session ID found. Please authenticate first."
+      }],
+      isError: true
+    };
+  }
+  
+  // Get KV namespace from environment
+  const kv = (extra.env as Env)?.OAUTH_KV;
+  if (!kv) {
+    return {
+      content: [{
+        type: "text",
+        text: "Error: KV store not available."
+      }],
+      isError: true
+    };
+  }
+  
+  // Get access token from session
+  const accessToken = await getAccessTokenFromSession(props.sessionId, kv);
+  if (!accessToken) {
+    return {
+      content: [{
+        type: "text",
+        text: "Error: Session expired or invalid. Please re-authenticate."
+      }],
+      isError: true
+    };
+  }
+  
+  const response = await fetch(`${UPSTOX_API_BASE_URL}${UPSTOX_API_ORDER_DETAILS_ENDPOINT}/${validatedArgs.orderId}`, {
     method: "GET",
     headers: {
       "Accept": HEADERS.ACCEPT,
-      "Authorization": `Bearer ${validatedArgs.accessToken}`
+      "Authorization": `Bearer ${accessToken}`
     }
   });
 
@@ -64,7 +100,7 @@ export const getOrderDetailsHandler: ToolHandler<{ accessToken: string; orderId:
     throw new Error(ERROR_MESSAGES.API_ERROR);
   }
 
-  const data = await response.json() as OrderDetailsResponse;
+  const data = await response.json() as UpstoxOrderDetailsResponse;
   
   return {
     content: [{

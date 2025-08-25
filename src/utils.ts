@@ -72,3 +72,93 @@ export const homeContent = async (req: Request) => {
 		</div>
 	`;
 };
+
+// Context from the auth process, now contains sessionId instead of direct access token
+export type Props = {
+	sessionId: string;
+};
+
+// Session data stored in KV
+export interface SessionData {
+	accessToken: string;
+	email: string;
+	userId: string;
+	userName: string;
+	createdAt: number;
+}
+
+// Utility to get session data from KV using session ID
+export async function getSessionData(sessionId: string, kv: KVNamespace): Promise<SessionData | null> {
+	try {
+		const sessionDataStr = await kv.get(`session:${sessionId}`);
+		if (!sessionDataStr) {
+			return null;
+		}
+		return JSON.parse(sessionDataStr) as SessionData;
+	} catch (error) {
+		console.error('Error retrieving session data:', error);
+		return null;
+	}
+}
+
+// Utility to validate and get access token from session
+export async function getAccessTokenFromSession(sessionId: string, kv: KVNamespace): Promise<string | null> {
+	const sessionData = await getSessionData(sessionId, kv);
+	return sessionData?.accessToken || null;
+}
+
+export function getUpstreamAuthorizeUrl({
+	client_id,
+	redirect_uri,
+	state,
+	upstream_url,
+}: {
+	client_id: string;
+	redirect_uri: string;
+	state: string;
+	upstream_url: string;
+}): string {
+	const url = new URL(upstream_url);
+	url.searchParams.append("client_id", client_id);
+	url.searchParams.append("redirect_uri", redirect_uri);
+	url.searchParams.append("response_type", "code");
+	url.searchParams.append("state", state);
+	return url.toString();
+}
+
+export async function fetchUpstreamAuthToken({
+	client_id,
+	client_secret,
+	code,
+	redirect_uri,
+	upstream_url,
+}: {
+	code: string | undefined;
+	upstream_url: string;
+	client_secret: string;
+	redirect_uri: string;
+	client_id: string;
+}): Promise<[string, null] | [null, Response]> {
+	if (!code) {
+		return [null, new Response("Missing code", { status: 400 })];
+	}
+
+	const grant_type = "authorization_code";
+	const resp = await fetch(upstream_url, {
+		body: new URLSearchParams({ client_id, client_secret, code, redirect_uri, grant_type }).toString(),
+		headers: {
+			"Content-Type": "application/x-www-form-urlencoded",
+			"Accept": "application/json",
+		},
+		method: "POST",
+	});
+	if (!resp.ok) {
+		console.log(await resp.text());
+		return [null, new Response("Failed to fetch access token", { status: 500 })];
+	}
+	const body = await resp.json() as { access_token?: string };
+	if (!body.access_token) {
+		return [null, new Response("Missing access token", { status: 400 })];
+	}
+	return [JSON.stringify(body), null];
+}

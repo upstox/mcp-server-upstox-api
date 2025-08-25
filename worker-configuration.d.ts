@@ -5,6 +5,8 @@ declare namespace Cloudflare {
 		OAUTH_KV: KVNamespace;
 		MCP_OBJECT: DurableObjectNamespace<import("./src/index").MyMCP>;
 		ASSETS: Fetcher;
+		UPSTOX_CLIENT_ID: string;
+		UPSTOX_CLIENT_SECRET: string;
 	}
 }
 interface Env extends Cloudflare.Env {}

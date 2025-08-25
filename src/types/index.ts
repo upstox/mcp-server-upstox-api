@@ -31,28 +31,14 @@ export interface ToolHandler<T> {
   (args: T, extra: { [key: string]: unknown }): Promise<ToolResponse>;
 }
 
-export interface GetProfileArgs {
-  accessToken: string;
-}
+// GetProfileArgs no longer needed - OAuth provides access token
 
 export interface GetFundsMarginArgs {
-  accessToken: string;
   segment?: 'SEC' | 'COM';
 }
 
-export interface GetHoldingsArgs {
-  accessToken: string;
-}
-
-export interface GetPositionsArgs {
-  accessToken: string;
-}
-
-export interface GetMtfPositionsArgs {
-  accessToken: string;
-}
+// Holdings, Positions, MTF Positions, Trades, Order Book no longer need Args interfaces - OAuth provides access token
 
 export interface GetOrderDetailsArgs {
-  accessToken: string;
   orderId: string;
 } 

@@ -1,14 +1,15 @@
 import { z } from "zod";
-import { ToolHandler, ToolResponse, GetProfileArgs } from "../types";
+import { ToolHandler, ToolResponse } from "../types";
 import { 
   UPSTOX_API_BASE_URL, 
   UPSTOX_API_PROFILE_ENDPOINT,
   HEADERS,
   ERROR_MESSAGES
 } from "../constants";
+import { Props, getAccessTokenFromSession } from "../utils";
 
 export const getProfileSchema = {
-  accessToken: z.string().min(1, "Access token is required"),
+  // No parameters needed - access token comes from session
 };
 
 const GetProfileArgsSchema = z.object(getProfileSchema);
@@ -30,14 +31,50 @@ interface UpstoxProfileResponse {
   };
 }
 
-export const getProfileHandler: ToolHandler<GetProfileArgs> = async (args: GetProfileArgs, extra: { [key: string]: unknown }): Promise<ToolResponse> => {
+export const getProfileHandler: ToolHandler<{}> = async (args: {}, extra: { [key: string]: unknown }): Promise<ToolResponse> => {
   const validatedArgs = GetProfileArgsSchema.parse(args);
+  
+  // Get session ID from props
+  const props = extra.props as Props;
+  if (!props?.sessionId) {
+    return {
+      content: [{
+        type: "text",
+        text: "Error: No session ID found. Please authenticate first."
+      }],
+      isError: true
+    };
+  }
+  
+  // Get KV namespace from environment
+  const kv = (extra.env as Env)?.OAUTH_KV;
+  if (!kv) {
+    return {
+      content: [{
+        type: "text",
+        text: "Error: KV store not available."
+      }],
+      isError: true
+    };
+  }
+  
+  // Get access token from session
+  const accessToken = await getAccessTokenFromSession(props.sessionId, kv);
+  if (!accessToken) {
+    return {
+      content: [{
+        type: "text",
+        text: "Error: Session expired or invalid. Please re-authenticate."
+      }],
+      isError: true
+    };
+  }
   
   const response = await fetch(`${UPSTOX_API_BASE_URL}${UPSTOX_API_PROFILE_ENDPOINT}`, {
     method: "GET",
     headers: {
       "Accept": HEADERS.ACCEPT,
-      "Authorization": `Bearer ${validatedArgs.accessToken}`
+      "Authorization": `Bearer ${accessToken}`
     }
   });
 
