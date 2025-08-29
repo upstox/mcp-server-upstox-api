@@ -78,6 +78,22 @@ export type Props = {
 	sessionId: string;
 };
 
+// Upstox token response interface based on official API documentation
+export interface UpstoxTokenResponse {
+	email: string;
+	exchanges: string[];
+	products: string[];
+	broker: string;
+	user_id: string;
+	user_name: string;
+	order_types: string[];
+	user_type: string;
+	poa: boolean;
+	is_active: boolean;
+	access_token: string;
+	extended_token: string;
+}
+
 // Session data stored in KV
 export interface SessionData {
 	accessToken: string;
@@ -105,6 +121,42 @@ export async function getSessionData(sessionId: string, kv: KVNamespace): Promis
 export async function getAccessTokenFromSession(sessionId: string, kv: KVNamespace): Promise<string | null> {
 	const sessionData = await getSessionData(sessionId, kv);
 	return sessionData?.accessToken || null;
+}
+
+// Helper function to extract KV from various possible sources in the extra context
+export function getKVFromContext(extra: { [key: string]: unknown }): KVNamespace | null {
+	// Try to get from extra.env first (direct environment access)
+	if (extra.env && typeof extra.env === 'object' && 'OAUTH_KV' in extra.env) {
+		return (extra.env as Env).OAUTH_KV;
+	}
+	
+	// Try to get from the OAuth context (when called via OAuth provider)
+	if (extra.context && typeof extra.context === 'object') {
+		const context = extra.context as any;
+		if (context.env && context.env.OAUTH_KV) {
+			return context.env.OAUTH_KV;
+		}
+	}
+	
+	// Try to get from extra directly (if OAuth provider passes it directly)
+	if ('OAUTH_KV' in extra) {
+		return extra.OAUTH_KV as KVNamespace;
+	}
+	
+	// Try to get from request context (OAuth provider pattern)
+	if (extra.request && typeof extra.request === 'object') {
+		const request = extra.request as any;
+		if (request.env && request.env.OAUTH_KV) {
+			return request.env.OAUTH_KV;
+		}
+	}
+	
+	// Try to get from global context if available
+	if (typeof globalThis !== 'undefined' && 'OAUTH_KV' in globalThis) {
+		return (globalThis as any).OAUTH_KV;
+	}
+	
+	return null;
 }
 
 export function getUpstreamAuthorizeUrl({
@@ -153,12 +205,17 @@ export async function fetchUpstreamAuthToken({
 		method: "POST",
 	});
 	if (!resp.ok) {
-		console.log(await resp.text());
+		const errorText = await resp.text();
+		console.error("Upstox token request failed:", errorText);
 		return [null, new Response("Failed to fetch access token", { status: 500 })];
 	}
-	const body = await resp.json() as { access_token?: string };
+	
+	const body = await resp.json() as UpstoxTokenResponse;
 	if (!body.access_token) {
+		console.error("Upstox token response missing access_token:", body);
 		return [null, new Response("Missing access token", { status: 400 })];
 	}
+	
+	console.log("Successfully obtained Upstox token for user:", body.user_id);
 	return [JSON.stringify(body), null];
 }

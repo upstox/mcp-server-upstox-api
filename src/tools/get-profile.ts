@@ -6,7 +6,7 @@ import {
   HEADERS,
   ERROR_MESSAGES
 } from "../constants";
-import { Props, getAccessTokenFromSession } from "../utils";
+import { Props, getAccessTokenFromSession, getKVFromContext } from "../utils";
 
 export const getProfileSchema = {
   // No parameters needed - access token comes from session
@@ -46,13 +46,14 @@ export const getProfileHandler: ToolHandler<{}> = async (args: {}, extra: { [key
     };
   }
   
-  // Get KV namespace from environment
-  const kv = (extra.env as Env)?.OAUTH_KV;
+  // Get KV namespace from context
+  const kv = getKVFromContext(extra);
   if (!kv) {
+    console.error('KV store not available in extra:', Object.keys(extra));
     return {
       content: [{
         type: "text",
-        text: "Error: KV store not available."
+        text: "Error: KV store not available. Please check server configuration."
       }],
       isError: true
     };

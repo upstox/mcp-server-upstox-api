@@ -1,5 +1,5 @@
 // Upstox API Configuration
-export const UPSTOX_API_BASE_URL = "https://api.upstox.com";
+export const UPSTOX_API_BASE_URL = "https://uat-api.upstox.com";
 export const UPSTOX_API_PROFILE_ENDPOINT = '/v2/user/profile';
 export const UPSTOX_API_FUNDS_MARGIN_ENDPOINT = '/v2/user/get-funds-and-margin';
 export const UPSTOX_API_HOLDINGS_ENDPOINT = '/v2/portfolio/long-term-holdings';

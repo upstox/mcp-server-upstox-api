@@ -26,53 +26,43 @@ export class MyMCP extends McpAgent {
     console.log("MCP Agent initialized");
     
     this.server.tool("get-profile", getProfileSchema, async (args, extra) => {
-        const enhancedExtra = { ...extra, props: this.props, env: this.env };
-        return getProfileHandler(args as {}, enhancedExtra);
+        return getProfileHandler(args as {}, extra);
     });
     
     this.server.tool("get-funds-margin", getFundsMarginSchema, async (args, extra) => {
-        const enhancedExtra = { ...extra, props: this.props, env: this.env };
-        return getFundsMarginHandler(args as {segment?: 'SEC' | 'COM'}, enhancedExtra);
+        return getFundsMarginHandler(args as {segment?: 'SEC' | 'COM'}, extra);
     });
     
     this.server.tool("get-holdings", getHoldingsSchema, async (args, extra) => {
-        const enhancedExtra = { ...extra, props: this.props, env: this.env };
-        return getHoldingsHandler(args as {}, enhancedExtra);
+        return getHoldingsHandler(args as {}, extra);
     });
     
     this.server.tool("get-positions", getPositionsSchema, async (args, extra) => {
-        const enhancedExtra = { ...extra, props: this.props, env: this.env };
-        return getPositionsHandler(args as {}, enhancedExtra);
+        return getPositionsHandler(args as {}, extra);
     });
     
     this.server.tool("get-mtf-positions", getMtfPositionsSchema, async (args, extra) => {
-        const enhancedExtra = { ...extra, props: this.props, env: this.env };
-        return getMtfPositionsHandler(args as {}, enhancedExtra);
+        return getMtfPositionsHandler(args as {}, extra);
     });
     
     this.server.tool("get-order-book", getOrderBookSchema, async (args, extra) => {
-        const enhancedExtra = { ...extra, props: this.props, env: this.env };
-        return getOrderBookHandler(args as {}, enhancedExtra);
+        return getOrderBookHandler(args as {}, extra);
     });
     
     this.server.tool("get-order-details", getOrderDetailsSchema, async (args, extra) => {
-        const enhancedExtra = { ...extra, props: this.props, env: this.env };
-        return getOrderDetailsHandler(args as {orderId: string}, enhancedExtra);
+        return getOrderDetailsHandler(args as {orderId: string}, extra);
     });
     
     this.server.tool("get-trades", getTradesSchema, async (args, extra) => {
-        const enhancedExtra = { ...extra, props: this.props, env: this.env };
-        return getTradesHandler(args as {}, enhancedExtra);
+        return getTradesHandler(args as {}, extra);
     });
     
     this.server.tool("get-order-trades", getOrderTradesSchema, async (args, extra) => {
-        const enhancedExtra = { ...extra, props: this.props, env: this.env };
-        return getOrderTradesHandler(args as {orderId: string}, enhancedExtra);
+        return getOrderTradesHandler(args as {orderId: string}, extra);
     });
     
     this.server.tool("get-order-history", getOrderHistorySchema, async (args, extra) => {
-        const enhancedExtra = { ...extra, props: this.props, env: this.env };
-        return getOrderHistoryHandler(args as {orderId?: string; tag?: string}, enhancedExtra);
+        return getOrderHistoryHandler(args as {orderId?: string; tag?: string}, extra);
     });
   }
 }
