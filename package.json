@@ -1,5 +1,5 @@
 {
-	"name": "remote-mcp-server",
+	"name": "upstox-mcp-server",
 	"version": "0.0.0",
 	"private": true,
 	"scripts": {
