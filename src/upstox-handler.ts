@@ -64,16 +64,14 @@ app.get("/callback", async (c) => {
         email: userData.email || "",
         userId: userData.user_id || "",
         userName: userData.user_name || "",
-        createdAt: Date.now()
+        createdAt: Date.now(),
+        clientId: oauthReqInfo.clientId
     };
 
-    // Store session data in KV with 1 hour TTL (3600 seconds) using client's session ID
     await c.env.OAUTH_KV.put(
         `session:${clientSessionId}`, 
-        JSON.stringify(sessionData), 
-        { expirationTtl: 3600 }
+        JSON.stringify(sessionData)
     );
-
     // Complete OAuth authorization with the client's session ID
     const { redirectTo } = await c.env.OAUTH_PROVIDER.completeAuthorization({
         props: {

@@ -1,12 +1,12 @@
 import { z } from "zod";
-import { ToolHandler, ToolResponse } from "../types";
+import { ToolHandler, ToolResponse, ToolEnv} from "../types";
 import { 
   UPSTOX_API_BASE_URL, 
   UPSTOX_API_ORDER_HISTORY_ENDPOINT,
   HEADERS,
   ERROR_MESSAGES
 } from "../constants";
-import { Props, getAccessTokenFromSession } from "../utils";
+import { Props, getAccessTokenFromSession, createSessionNotFoundError, createKVNotAvailableError, createAuthenticationExpiredError } from "../utils";
 
 export const getOrderHistorySchema = {
   orderId: z.string().optional(),
@@ -59,37 +59,20 @@ export const getOrderHistoryHandler: ToolHandler<{orderId?: string; tag?: string
   // Get session ID from props
   const props = extra.props as Props;
   if (!props?.sessionId) {
-    return {
-      content: [{
-        type: "text",
-        text: "Error: No session ID found. Please authenticate first."
-      }],
-      isError: true
-    };
+    return createSessionNotFoundError();
   }
   
+  const env = extra.env as ToolEnv;
   // Get KV namespace from environment
-  const kv = (extra.env as Env)?.OAUTH_KV;
+  const kv = (env)?.OAUTH_KV;
   if (!kv) {
-    return {
-      content: [{
-        type: "text",
-        text: "Error: KV store not available."
-      }],
-      isError: true
-    };
+    return createKVNotAvailableError();
   }
   
   // Get access token from session
-  const accessToken = await getAccessTokenFromSession(props.sessionId, kv);
+  const accessToken = await getAccessTokenFromSession(props.sessionId, kv, env.OAUTH_PROVIDER);
   if (!accessToken) {
-    return {
-      content: [{
-        type: "text",
-        text: "Error: Session expired or invalid. Please re-authenticate."
-      }],
-      isError: true
-    };
+    return createAuthenticationExpiredError();
   }
   
   // Build URL with query parameters
@@ -121,4 +104,4 @@ export const getOrderHistoryHandler: ToolHandler<{orderId?: string; tag?: string
       text: JSON.stringify(data, null, 2)
     }]
   };
-}; 
+};

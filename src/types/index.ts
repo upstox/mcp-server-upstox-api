@@ -1,3 +1,4 @@
+import { OAuthHelpers } from "@cloudflare/workers-oauth-provider";
 import { z } from "zod";
 
 export interface ToolResponse {
@@ -24,6 +25,11 @@ export interface ToolResponse {
   _meta?: {
     [key: string]: unknown;
   };
+  metadata?: {
+    errorType?: "AUTHENTICATION_EXPIRED" | "AUTHENTICATION_INVALID" | "API_ERROR";
+    requiresReauth?: boolean;
+    [key: string]: any;
+  };
   isError?: boolean;
 }
 
@@ -41,4 +47,8 @@ export interface GetFundsMarginArgs {
 
 export interface GetOrderDetailsArgs {
   orderId: string;
-} 
+}
+
+export interface ToolEnv extends Env {
+  OAUTH_PROVIDER: OAuthHelpers;
+}
