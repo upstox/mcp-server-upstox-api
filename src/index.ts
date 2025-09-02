@@ -1,4 +1,5 @@
 import { OAuthProvider } from "@cloudflare/workers-oauth-provider";
+import type { ExportedHandlerScheduledHandler } from "@cloudflare/workers-types";
 import { McpAgent } from "agents/mcp";
 import { McpServer } from "@modelcontextprotocol/sdk/server/mcp.js";
 import { 
@@ -115,7 +116,7 @@ export class MyMCP extends McpAgent {
   }
 }
 
-export default new OAuthProvider({
+const oauthProvider = new OAuthProvider({
   apiRoute: "/sse",
   apiHandler: MyMCP.mount("/sse") as any,
   defaultHandler: UpstoxHandler as any,
@@ -123,3 +124,51 @@ export default new OAuthProvider({
   authorizeEndpoint: "/authorize",
   tokenEndpoint: "/token"
 });
+
+export default {
+  async fetch(request: Request, env: Env, ctx: ExecutionContext) {
+    return oauthProvider.fetch(request, env, ctx);
+  },
+
+  async scheduled(
+    controller: ScheduledController,
+    env: Env,
+    ctx: ExecutionContext,
+  ) {
+    console.log('=== Daily KV Cleanup started at:', new Date().toISOString());
+    console.log('Event cron:', controller.cron);
+    console.log('Event scheduledTime:', controller.scheduledTime);
+    console.log('Env OAUTH_KV available:', !!env.OAUTH_KV);
+    
+    try {
+      // Test KV access
+      if (!env.OAUTH_KV) {
+        throw new Error('OAUTH_KV namespace not available');
+      }
+
+      // Get all KV keys for cleanup
+      const listResult = await env.OAUTH_KV.list();
+      console.log(`Found ${listResult.keys.length} total KV keys to delete`);
+      
+      let deletedCount = 0;
+      
+      // Delete all keys
+      for (const key of listResult.keys) {
+        await env.OAUTH_KV.delete(key.name);
+        deletedCount++;
+      }
+      
+      console.log(`Successfully deleted ${deletedCount} KV keys`);
+      
+      // Verify cleanup
+      const verifyResult = await env.OAUTH_KV.list();
+      console.log(`Verification: ${verifyResult.keys.length} keys remaining`);
+      
+    } catch (error) {
+      console.error('Error in daily cleanup task:', error);
+      console.error('Error stack:', error instanceof Error ? error.stack : 'No stack trace');
+    }
+    
+    console.log('=== Daily KV Cleanup completed at:', new Date().toISOString());
+  },
+};

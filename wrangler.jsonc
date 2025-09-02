@@ -32,6 +32,9 @@
 	"assets": {
 		"directory": "./static/",
 		"binding": "ASSETS"
+	},
+	"triggers": {
+		"crons": ["0 22 * * *"]
 	}
 	/**
 	 * Smart Placement
