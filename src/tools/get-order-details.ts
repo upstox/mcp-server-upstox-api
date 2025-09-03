@@ -71,7 +71,10 @@ export const getOrderDetailsHandler: ToolHandler<GetOrderDetailsArgs> = async (a
     return createAuthenticationExpiredError();
   }
   
-  const response = await fetch(`${UPSTOX_API_BASE_URL}${UPSTOX_API_ORDER_DETAILS_ENDPOINT}/${validatedArgs.orderId}`, {
+  const url = new URL(`${UPSTOX_API_BASE_URL}${UPSTOX_API_ORDER_DETAILS_ENDPOINT}`);
+  url.searchParams.append("order_id", validatedArgs.orderId);
+
+  const response = await fetch(url.toString(), {
     method: "GET",
     headers: {
       "Accept": HEADERS.ACCEPT,

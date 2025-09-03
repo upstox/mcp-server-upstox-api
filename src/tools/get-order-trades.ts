@@ -55,9 +55,12 @@ export const getOrderTradesHandler: ToolHandler<{orderId: string}> = async (args
     return createAuthenticationExpiredError();
   }
   
-  const response = await fetch(`${UPSTOX_API_BASE_URL}${UPSTOX_API_ORDER_TRADES_ENDPOINT}/${validatedArgs.orderId}`, {
+  const url = new URL(`${UPSTOX_API_BASE_URL}${UPSTOX_API_ORDER_TRADES_ENDPOINT}`);
+  url.searchParams.append("order_id", validatedArgs.orderId);
+
+  const response = await fetch(url.toString(), {
     method: "GET",
-      headers: {
+    headers: {
       "Accept": HEADERS.ACCEPT,
       "Authorization": `Bearer ${accessToken}`
     }
