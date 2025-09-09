@@ -1,7 +1,7 @@
 import { env } from "cloudflare:workers";
 import type { AuthRequest, OAuthHelpers } from "@cloudflare/workers-oauth-provider";
 import { Hono } from "hono";
-import { getUpstreamAuthorizeUrl, fetchUpstreamAuthToken, Props } from "./utils";
+import { getUpstreamAuthorizeUrl, fetchUpstreamAuthToken, Props, getTTLUntil330AMIST } from "./utils";
 import { getProfileHandler } from "./tools";
 
 const app = new Hono<{ Bindings: Env & { OAUTH_PROVIDER: OAuthHelpers } }>();
@@ -70,7 +70,7 @@ app.get("/callback", async (c) => {
 
     await c.env.OAUTH_KV.put(
         `session:${clientSessionId}`, 
-        JSON.stringify(sessionData)
+        JSON.stringify(sessionData), {expirationTtl: getTTLUntil330AMIST()}
     );
     // Complete OAuth authorization with the client's session ID
     const { redirectTo } = await c.env.OAUTH_PROVIDER.completeAuthorization({

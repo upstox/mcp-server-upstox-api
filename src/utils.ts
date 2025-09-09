@@ -282,3 +282,51 @@ export function createKVNotAvailableError(): ToolResponse {
 		}
 	};
 }
+
+/**
+ * Calculate TTL in seconds until the next 3:30 AM IST
+ * 
+ * This function calculates the time remaining until the next occurrence of 3:30 AM
+ * in Indian Standard Time (IST). If the current time is already past 3:30 AM IST
+ * today, it will calculate the time until 3:30 AM IST tomorrow.
+ * 
+ * @returns {number} The number of seconds until the next 3:30 AM IST
+ * @throws {Error} If the calculated TTL is negative or invalid
+ */
+export function getTTLUntil330AMIST(): number {
+	try {
+		// Get current time in IST using proper timezone handling
+		const now = new Date();
+		const nowIST = new Date(now.toLocaleString("en-US", { timeZone: "Asia/Kolkata" }));
+		
+		// Create target time: 3:30 AM IST today
+		const targetIST = new Date(nowIST);
+		targetIST.setHours(3, 30, 0, 0);
+		
+		// If current time is already past 3:30 AM IST today, set target to tomorrow
+		if (targetIST.getTime() <= nowIST.getTime()) {
+			targetIST.setDate(targetIST.getDate() + 1);
+		}
+		
+		// Calculate difference in milliseconds and convert to seconds
+		const diffMs = targetIST.getTime() - nowIST.getTime();
+		const diffSeconds = Math.floor(diffMs / 1000);
+		
+		// Validate the result
+		if (diffSeconds <= 0) {
+			throw new Error(`Invalid TTL calculated: ${diffSeconds} seconds`);
+		}
+
+		console.log(`[TTL Calculator] TTL seconds: ${diffSeconds} (${Math.round(diffSeconds / 3600 * 100) / 100} hours)`);
+		
+		// CF Worker KV TTL must be at least 60 seconds
+		return Math.max(60, diffSeconds);
+		
+	} catch (error) {
+		console.error('[TTL Calculator] Error calculating TTL:', error);
+		// Fallback: return 24 hours if calculation fails
+		const fallbackTTL = 24 * 60 * 60; // 24 hours in seconds
+		console.warn(`[TTL Calculator] Using fallback TTL: ${fallbackTTL} seconds (24 hours)`);
+		return fallbackTTL;
+	}
+}

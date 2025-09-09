@@ -16,7 +16,7 @@ import {
   logoutSchema, logoutHandler
 } from "./tools";
 import UpstoxHandler from "./upstox-handler";
-import { Props } from "./utils";
+import { Props, getTTLUntil330AMIST } from "./utils";
 import { ToolResponse } from "./types";
 
 export class MyMCP extends McpAgent {
@@ -122,7 +122,8 @@ const oauthProvider = new OAuthProvider({
   defaultHandler: UpstoxHandler as any,
   clientRegistrationEndpoint: "/register",
   authorizeEndpoint: "/authorize",
-  tokenEndpoint: "/token"
+  tokenEndpoint: "/token",
+  accessTokenTTL: getTTLUntil330AMIST()
 });
 
 export default {
