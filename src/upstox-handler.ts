@@ -27,7 +27,7 @@ app.get("/authorize", async (c) => {
             location: getUpstreamAuthorizeUrl({
                 redirect_uri: new URL("/callback", c.req.raw.url).href,
                 state: btoa(JSON.stringify(stateData)),
-                upstream_url: "https://uat-api.upstox.com/v2/login/authorization/dialog",
+                upstream_url: "https://api.upstox.com/v2/login/authorization/dialog",
                 client_id: env.UPSTOX_CLIENT_ID,
             })
         },
@@ -49,7 +49,7 @@ app.get("/callback", async (c) => {
         client_secret: env.UPSTOX_CLIENT_SECRET,
         code: c.req.query("code") as string,
         redirect_uri: new URL("/callback", c.req.raw.url).href,
-        upstream_url: "https://uat-api.upstox.com/v2/login/authorization/token",
+        upstream_url: "https://api.upstox.com/v2/login/authorization/token",
     });
 
     if (error) return error;

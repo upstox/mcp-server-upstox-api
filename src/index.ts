@@ -12,8 +12,7 @@ import {
   getOrderDetailsSchema, getOrderDetailsHandler,
   getTradesSchema, getTradesHandler,
   getOrderTradesSchema, getOrderTradesHandler,
-  getOrderHistorySchema, getOrderHistoryHandler,
-  logoutSchema, logoutHandler
+  getOrderHistorySchema, getOrderHistoryHandler
 } from "./tools";
 import UpstoxHandler from "./upstox-handler";
 import { Props, getTTLUntil330AMIST } from "./utils";
@@ -108,11 +107,6 @@ export class MyMCP extends McpAgent {
       return this.handleAuthError("get-order-history", response);
     });
 
-    this.server.tool("logout", logoutSchema, async (args, extra) => {
-      const enhancedExtra = { ...extra, props: this.props, env: this.env };
-      const response = await logoutHandler(args as {}, enhancedExtra);
-      return this.handleAuthError("logout", response);
-    });
   }
 }
 

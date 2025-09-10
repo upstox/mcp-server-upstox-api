@@ -9,4 +9,3 @@ export * from "./get-order-details";
 export * from "./get-trades";
 export * from "./get-order-trades";
 export * from "./get-order-history"; 
-export * from "./logout";
