@@ -70,7 +70,7 @@ export const getOrderHistoryHandler: ToolHandler<{orderId?: string; tag?: string
   }
   
   // Get access token from session
-  const accessToken = await getAccessTokenFromSession(props.sessionId, kv, env.OAUTH_PROVIDER);
+  const accessToken = await getAccessTokenFromSession(props.sessionId, kv);
   if (!accessToken) {
     return createAuthenticationExpiredError();
   }

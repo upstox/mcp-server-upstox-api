@@ -90,61 +90,13 @@ export interface SessionData {
 	clientId: string; 
 }
 
-// Session validity duration in seconds (1 hour)
-export const SESSION_VALIDITY_DURATION = 60 * 60; // 1 hour
 
-// Utility to validate session based on creation time
-export function isSessionValid(sessionData: SessionData): boolean {
-	const now = Date.now();
-	const sessionAge = now - sessionData.createdAt;
-	console.log(`Session age: ${sessionAge / 1000} seconds for userId: ${sessionData.userId}`);
-	return sessionAge / 1000 < SESSION_VALIDITY_DURATION;
-}
 
-// Helper function to clean up expired session and related OAuth data
-export async function cleanupExpiredSession(
-	sessionId: string, 
-	sessionData: SessionData,
-	kv: KVNamespace,
-	oauthProvider: OAuthHelpers
-): Promise<void> {
-	try {
-		// Delete session KV pair
-		await kv.delete(`session:${sessionId}`);
-		
-		// Revoke all grants for the user
-		if (sessionData.userId) {
-			const grantsResult = await oauthProvider.listUserGrants(sessionData.userId);
-			const allGrantIds = grantsResult.items.map((grant: any) => grant.id);
-			
-			// Revoke each grant
-			for (const grantId of allGrantIds) {
-				try {
-					await oauthProvider.revokeGrant(grantId, sessionData.userId);
-					console.log(`Successfully revoked grant ${grantId} for user ${sessionData.userId}`);
-				} catch (error) {
-					console.error(`Error revoking grant ${grantId}:`, error);
-				}
-			}
-		}
-		
-		// Delete client
-		if (sessionData.clientId) {
-			await oauthProvider.deleteClient(sessionData.clientId);
-			console.log(`Successfully deleted client ${sessionData.clientId}`);
-		}
-		
-		console.log("Successfully cleaned up expired session");
-	} catch (error) {
-		console.error("Error cleaning up expired session:", error);
-	}
-}
 
 // Updated utility to get and validate session data from KV
 export async function getValidSessionData(
 	sessionId: string, 
 	kv: KVNamespace,
-	oauthProvider?: any
 ): Promise<SessionData | null> {
 	try {
 		const sessionDataStr = await kv.get(`session:${sessionId}`);
@@ -153,19 +105,7 @@ export async function getValidSessionData(
 		}
 		
 		const sessionData = JSON.parse(sessionDataStr) as SessionData;
-		
-		// Check if session is still valid
-		if (!isSessionValid(sessionData)) {
-			console.log(`Session ${sessionId} has expired, cleaning up...`);
-			
-			// Clean up expired session if OAuth provider is available
-			if (oauthProvider) {
-				await cleanupExpiredSession(sessionId, sessionData, kv, oauthProvider);
-			}
-			
-			return null;
-		}
-		
+				
 		return sessionData;
 	} catch (error) {
 		console.error('Error retrieving session data:', error);
@@ -178,10 +118,9 @@ export async function getValidSessionData(
 // Updated utility to validate and get access token from session
 export async function getAccessTokenFromSession(
 	sessionId: string, 
-	kv: KVNamespace,
-	oauthProvider?: any
+	kv: KVNamespace
 ): Promise<string | null> {
-	const sessionData = await getValidSessionData(sessionId, kv, oauthProvider);
+	const sessionData = await getValidSessionData(sessionId, kv);
 	return sessionData?.accessToken || null;
 }
 

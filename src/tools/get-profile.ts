@@ -48,7 +48,7 @@ export const getProfileHandler: ToolHandler<{}> = async (args: {}, extra: { [key
   }
   
   // Get access token from session
-  const accessToken = await getAccessTokenFromSession(props.sessionId, kv, env.OAUTH_PROVIDER);
+  const accessToken = await getAccessTokenFromSession(props.sessionId, kv);
   if (!accessToken) {
     return createAuthenticationExpiredError();
   }
