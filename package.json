@@ -13,7 +13,7 @@
 		"test:watch": "vitest"
 	},
 	"devDependencies": {
-		"@cloudflare/workers-oauth-provider": "^0.0.5",
+		"@cloudflare/workers-oauth-provider": "^0.2.3",
 		"@cloudflare/workers-types": "^4.20250404.0",
 		"@testing-library/react": "^14.2.1",
 		"@types/node": "^22.14.1",
@@ -26,8 +26,8 @@
 		"wrangler": "^4.7.1"
 	},
 	"dependencies": {
-		"@modelcontextprotocol/sdk": "^1.7.0",
-		"agents": "^0.0.43",
+		"@modelcontextprotocol/sdk": "^1.26.0",
+		"agents": "^0.5.1",
 		"hono": "^4.7.4",
 		"zod": "^3.24.2"
 	}

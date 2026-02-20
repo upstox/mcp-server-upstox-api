@@ -39,7 +39,7 @@ To use this MCP server with Claude Desktop, add the following configuration to y
       "command": "npx",
       "args": [
         "mcp-remote",
-        "http://localhost:8787/sse"
+        "http://localhost:8787/mcp"
       ]
     }
   }
@@ -54,7 +54,7 @@ To use this MCP server with Cursor, add the following configuration to your Curs
 {
   "mcpServers": {
     "mcp-server-upstox-api": {
-      "url": "http://localhost:8787/sse"
+      "url": "http://localhost:8787/mcp"
     }
   }
 }

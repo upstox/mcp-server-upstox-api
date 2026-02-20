@@ -111,8 +111,8 @@ export class MyMCP extends McpAgent {
 }
 
 const oauthProvider = new OAuthProvider({
-  apiRoute: "/sse",
-  apiHandler: MyMCP.mount("/sse") as any,
+  apiRoute: "/mcp",
+  apiHandler: MyMCP.serve("/mcp") as any,
   defaultHandler: UpstoxHandler as any,
   clientRegistrationEndpoint: "/register",
   authorizeEndpoint: "/authorize",
