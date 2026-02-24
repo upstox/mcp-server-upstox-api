@@ -1,14 +1,15 @@
 import { z } from "zod";
-import { ToolHandler, ToolResponse, GetProfileArgs } from "../types";
+import { ToolHandler, ToolResponse, ToolEnv } from "../types";
 import { 
   UPSTOX_API_BASE_URL, 
   UPSTOX_API_PROFILE_ENDPOINT,
   HEADERS,
   ERROR_MESSAGES
 } from "../constants";
+import { Props, getAccessTokenFromSession, createSessionNotFoundError, createKVNotAvailableError, createAuthenticationExpiredError } from "../utils";
 
 export const getProfileSchema = {
-  accessToken: z.string().min(1, "Access token is required"),
+  // No parameters needed - access token comes from session
 };
 
 const GetProfileArgsSchema = z.object(getProfileSchema);
@@ -30,14 +31,33 @@ interface UpstoxProfileResponse {
   };
 }
 
-export const getProfileHandler: ToolHandler<GetProfileArgs> = async (args: GetProfileArgs, extra: { [key: string]: unknown }): Promise<ToolResponse> => {
+export const getProfileHandler: ToolHandler<{}> = async (args: {}, extra: { [key: string]: unknown }): Promise<ToolResponse> => {
   const validatedArgs = GetProfileArgsSchema.parse(args);
+  
+  // Get session ID from props
+  const props = extra.props as Props;
+  if (!props?.sessionId) {
+    return createSessionNotFoundError();
+  }
+  
+  const env = extra.env as ToolEnv;
+  // Get KV namespace from environment
+  const kv = (env)?.OAUTH_KV;
+  if (!kv) {
+    return createKVNotAvailableError();
+  }
+  
+  // Get access token from session
+  const accessToken = await getAccessTokenFromSession(props.sessionId, kv);
+  if (!accessToken) {
+    return createAuthenticationExpiredError();
+  }
   
   const response = await fetch(`${UPSTOX_API_BASE_URL}${UPSTOX_API_PROFILE_ENDPOINT}`, {
     method: "GET",
     headers: {
       "Accept": HEADERS.ACCEPT,
-      "Authorization": `Bearer ${validatedArgs.accessToken}`
+      "Authorization": `Bearer ${accessToken}`
     }
   });
 
@@ -53,4 +73,4 @@ export const getProfileHandler: ToolHandler<GetProfileArgs> = async (args: GetPr
       text: JSON.stringify(data, null, 2)
     }]
   };
-}; 
+};

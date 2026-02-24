@@ -4,9 +4,10 @@
  */
 {
 	"$schema": "node_modules/wrangler/config-schema.json",
-	"name": "my-mcp-server",
+	"name": "upstox-mcp-server",
 	"main": "src/index.ts",
 	"compatibility_date": "2025-03-10",
+	"compatibility_flags": ["nodejs_compat"],
 	"migrations": [
 		{
 			"new_sqlite_classes": [
@@ -29,12 +30,12 @@
 			"id": "<ADD YOUR KV NAMESPACEID HERE>"
 		}
 	],
-	"observability": {
-		"enabled": true
-	},
 	"assets": {
 		"directory": "./static/",
 		"binding": "ASSETS"
+	},
+	"triggers": {
+		"crons": ["0 22 * * *"]
 	}
 	/**
 	 * Smart Placement

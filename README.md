@@ -17,14 +17,34 @@ cd mcp-server-upstox-api
 npm install
 ```
 
+### Running locally
+
+1. **Create an Upstox API app**  
+   Create a regular Upstox API app in the [Upstox developer portal](https://account.upstox.com/developer/apps) (Apps → My apps → + New App). Set the **Redirect URL** to:
+   ```
+   http://localhost:8787/callback
+   ```
+
+2. **Configure credentials**  
+   Create a file named `.dev.vars` in the project root and add your API key (Client ID) and Client Secret:
+   ```
+   UPSTOX_CLIENT_ID=your_app_api_key
+   UPSTOX_CLIENT_SECRET=your_app_api_secret
+   ```
+
+3. **Start the application**
+   ```bash
+   npm start
+   ```
+
+Your MCP server will be running at `http://localhost:8787`.
+
 ### Run the Server
 
-To start the MCP server:
+To start the MCP server (after completing the steps above):
 ```bash
 npm run start
 ```
-
-Your MCP server will be running at `http://localhost:8787`
 
 ## MCP Configuration
 
@@ -39,7 +59,7 @@ To use this MCP server with Claude Desktop, add the following configuration to y
       "command": "npx",
       "args": [
         "mcp-remote",
-        "http://localhost:8787/sse"
+        "http://localhost:8787/mcp"
       ]
     }
   }
@@ -54,7 +74,7 @@ To use this MCP server with Cursor, add the following configuration to your Curs
 {
   "mcpServers": {
     "mcp-server-upstox-api": {
-      "url": "http://localhost:8787/sse"
+      "url": "http://localhost:8787/mcp"
     }
   }
 }

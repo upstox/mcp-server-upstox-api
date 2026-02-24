@@ -1,89 +1,102 @@
 import { z } from "zod";
-import { ToolHandler, ToolResponse } from "./types";
+import { ToolHandler, ToolResponse, ToolEnv} from "../types";
 import { 
   UPSTOX_API_BASE_URL, 
   UPSTOX_API_ORDER_HISTORY_ENDPOINT,
   HEADERS,
   ERROR_MESSAGES
 } from "../constants";
+import { Props, getAccessTokenFromSession, createSessionNotFoundError, createKVNotAvailableError, createAuthenticationExpiredError } from "../utils";
 
 export const getOrderHistorySchema = {
-  accessToken: z.string().min(1, "Access token is required"),
   orderId: z.string().optional(),
-  tag: z.string().optional(),
+  tag: z.string().optional()
 };
 
-const GetOrderHistoryArgsSchema = z.object(getOrderHistorySchema)
-  .refine(
-    (data) => data.orderId || data.tag,
-    {
-      message: "At least one of 'orderId' or 'tag' is required",
-    }
-  );
+const GetOrderHistoryArgsSchema = z.object(getOrderHistorySchema);
 
-interface OrderHistory {
-  exchange: string;
-  price: number;
-  product: string;
-  quantity: number;
+interface UpstoxOrderHistoryResponse {
   status: string;
-  tag: string | null;
-  validity: string;
-  average_price: number;
-  disclosed_quantity: number;
-  exchange_order_id: string | null;
-  exchange_timestamp: string | null;
+  data: Array<{
+    exchange: string;
   instrument_token: string;
-  is_amo: boolean;
-  status_message: string | null;
   order_id: string;
-  order_request_id: string;
+    exchange_order_id: string;
+    parent_order_id: string;
+    status: string;
+    status_message: string;
+    status_message_raw: string;
   order_type: string;
-  parent_order_id: string;
+    order_ref_id: string;
+    product: string;
   trading_symbol: string;
   tradingsymbol: string;
+    instrument_name: string;
   order_timestamp: string;
+    exchange_timestamp: string;
+    price: number;
+    trigger_price: number;
+    quantity: number;
   filled_quantity: number;
-  transaction_type: string;
-  trigger_price: number;
+    pending_quantity: number;
+    average_price: number;
+    disclosed_quantity: number;
+    validity: string;
+    order_request_id: string;
   placed_by: string;
   variety: string;
+    modified: boolean;
+    oms_order_id: string;
+    exchange_order_no: string;
+    is_amo: boolean;
+    order_type_description: string;
+  }>;
 }
 
-interface OrderHistoryResponse {
-  status: string;
-  data: OrderHistory[];
-}
-
-export const getOrderHistoryHandler: ToolHandler<{ accessToken: string; orderId?: string; tag?: string }> = async (
-  args: { accessToken: string; orderId?: string; tag?: string },
-  extra: { [key: string]: unknown }
-): Promise<ToolResponse> => {
+export const getOrderHistoryHandler: ToolHandler<{orderId?: string; tag?: string}> = async (args: {orderId?: string; tag?: string}, extra: { [key: string]: unknown }): Promise<ToolResponse> => {
   const validatedArgs = GetOrderHistoryArgsSchema.parse(args);
 
-  const queryParams = new URLSearchParams();
+  // Get session ID from props
+  const props = extra.props as Props;
+  if (!props?.sessionId) {
+    return createSessionNotFoundError();
+  }
+  
+  const env = extra.env as ToolEnv;
+  // Get KV namespace from environment
+  const kv = (env)?.OAUTH_KV;
+  if (!kv) {
+    return createKVNotAvailableError();
+  }
+  
+  // Get access token from session
+  const accessToken = await getAccessTokenFromSession(props.sessionId, kv);
+  if (!accessToken) {
+    return createAuthenticationExpiredError();
+  }
+  
+  // Build URL with query parameters
+  const url = new URL(`${UPSTOX_API_BASE_URL}${UPSTOX_API_ORDER_HISTORY_ENDPOINT}`);
   if (validatedArgs.orderId) {
-    queryParams.append("order_id", validatedArgs.orderId);
+    url.searchParams.append('order_id', validatedArgs.orderId);
   }
   if (validatedArgs.tag) {
-    queryParams.append("tag", validatedArgs.tag);
+    url.searchParams.append('tag', validatedArgs.tag);
   }
 
-  const response = await fetch(
-    `${UPSTOX_API_BASE_URL}${UPSTOX_API_ORDER_HISTORY_ENDPOINT}?${queryParams.toString()}`,
-    {
+  const response = await fetch(url.toString(), {
+    method: "GET",
       headers: {
-        Accept: HEADERS.ACCEPT,
-        Authorization: `Bearer ${validatedArgs.accessToken}`,
-      },
+      "Accept": HEADERS.ACCEPT,
+      "Authorization": `Bearer ${accessToken}`
     }
-  );
+  });
 
   if (!response.ok) {
     throw new Error(ERROR_MESSAGES.API_ERROR);
   }
 
-  const data = await response.json() as OrderHistoryResponse;
+  const data = await response.json() as UpstoxOrderHistoryResponse;
 
   return {
     content: [{
@@ -91,4 +104,4 @@ export const getOrderHistoryHandler: ToolHandler<{ accessToken: string; orderId?
       text: JSON.stringify(data, null, 2)
     }]
   };
-}; 
+};

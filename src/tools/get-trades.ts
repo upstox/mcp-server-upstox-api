@@ -1,47 +1,65 @@
 import { z } from "zod";
-import { ToolHandler, ToolResponse } from "./types";
+import { ToolHandler, ToolResponse, ToolEnv } from "../types";
 import { 
   UPSTOX_API_BASE_URL, 
   UPSTOX_API_TRADES_ENDPOINT,
   HEADERS,
   ERROR_MESSAGES
 } from "../constants";
+import { Props, getAccessTokenFromSession, createSessionNotFoundError, createKVNotAvailableError, createAuthenticationExpiredError } from "../utils";
 
 export const getTradesSchema = {
-  accessToken: z.string().min(1, "Access token is required"),
+  // No parameters needed - access token comes from OAuth context
 };
 
 const GetTradesArgsSchema = z.object(getTradesSchema);
 
-interface TradeResponse {
+interface UpstoxTradesResponse {
   status: string;
   data: Array<{
     exchange: string;
-    product: string;
-    trading_symbol: string;
-    tradingsymbol: string;
     instrument_token: string;
-    order_type: string;
-    transaction_type: string;
-    quantity: number;
-    exchange_order_id: string;
-    order_id: string;
-    exchange_timestamp: string;
-    average_price: number;
+    product: string;
+    tradingsymbol: string;
     trade_id: string;
-    order_ref_id: string;
-    order_timestamp: string;
+    order_id: string;
+    exchange_order_id: string;
+    exchange_time: string;
+    time_in_micro: string;
+    is_index: boolean;
+    traded_price: number;
+    traded_quantity: number;
+    traded_value: number;
   }>;
 }
 
-export const getTradesHandler: ToolHandler<{ accessToken: string }> = async (args: { accessToken: string }, extra: { [key: string]: unknown }): Promise<ToolResponse> => {
+export const getTradesHandler: ToolHandler<{}> = async (args: {}, extra: { [key: string]: unknown }): Promise<ToolResponse> => {
   const validatedArgs = GetTradesArgsSchema.parse(args);
+  
+  // Get session ID from props
+  const props = extra.props as Props;
+  if (!props?.sessionId) {
+    return createSessionNotFoundError();
+  }
+  
+  const env = extra.env as ToolEnv;
+  // Get KV namespace from environment
+  const kv = (env)?.OAUTH_KV;
+  if (!kv) {
+    return createKVNotAvailableError();
+  }
+  
+  // Get access token from session
+  const accessToken = await getAccessTokenFromSession(props.sessionId, kv);
+  if (!accessToken) {
+    return createAuthenticationExpiredError();
+  }
   
   const response = await fetch(`${UPSTOX_API_BASE_URL}${UPSTOX_API_TRADES_ENDPOINT}`, {
     method: "GET",
     headers: {
       "Accept": HEADERS.ACCEPT,
-      "Authorization": `Bearer ${validatedArgs.accessToken}`
+      "Authorization": `Bearer ${accessToken}`
     }
   });
 
@@ -49,7 +67,7 @@ export const getTradesHandler: ToolHandler<{ accessToken: string }> = async (arg
     throw new Error(ERROR_MESSAGES.API_ERROR);
   }
 
-  const data = await response.json() as TradeResponse;
+  const data = await response.json() as UpstoxTradesResponse;
   
   return {
     content: [{
@@ -57,4 +75,4 @@ export const getTradesHandler: ToolHandler<{ accessToken: string }> = async (arg
       text: JSON.stringify(data, null, 2)
     }]
   };
-}; 
+};

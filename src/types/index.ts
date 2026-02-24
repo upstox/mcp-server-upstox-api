@@ -1,3 +1,4 @@
+import { OAuthHelpers } from "@cloudflare/workers-oauth-provider";
 import { z } from "zod";
 
 export interface ToolResponse {
@@ -24,6 +25,11 @@ export interface ToolResponse {
   _meta?: {
     [key: string]: unknown;
   };
+  metadata?: {
+    errorType?: "AUTHENTICATION_EXPIRED" | "AUTHENTICATION_INVALID" | "API_ERROR";
+    requiresReauth?: boolean;
+    [key: string]: any;
+  };
   isError?: boolean;
 }
 
@@ -31,28 +37,18 @@ export interface ToolHandler<T> {
   (args: T, extra: { [key: string]: unknown }): Promise<ToolResponse>;
 }
 
-export interface GetProfileArgs {
-  accessToken: string;
-}
+// GetProfileArgs no longer needed - OAuth provides access token
 
 export interface GetFundsMarginArgs {
-  accessToken: string;
   segment?: 'SEC' | 'COM';
 }
 
-export interface GetHoldingsArgs {
-  accessToken: string;
-}
-
-export interface GetPositionsArgs {
-  accessToken: string;
-}
-
-export interface GetMtfPositionsArgs {
-  accessToken: string;
-}
+// Holdings, Positions, MTF Positions, Trades, Order Book no longer need Args interfaces - OAuth provides access token
 
 export interface GetOrderDetailsArgs {
-  accessToken: string;
   orderId: string;
-} 
+}
+
+export interface ToolEnv extends Env {
+  OAUTH_PROVIDER: OAuthHelpers;
+}
