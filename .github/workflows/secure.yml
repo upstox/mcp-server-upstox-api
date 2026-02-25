@@ -164,4 +164,5 @@ jobs:
       - name: Approve PR
         run: gh pr review --approve "${{ github.event.pull_request.html_url }}"
         env:
+          GH_TOKEN: ${{ secrets.PAT_SECURITYREVIEWUSER }}
           GITHUB_TOKEN: ${{ secrets.PAT_SECURITYREVIEWUSER }}
