@@ -4,6 +4,7 @@ import { html } from "hono/html";
 import type { HtmlEscapedString } from "hono/utils/html";
 import { marked } from "marked";
 import { ToolResponse } from "./types";
+import { ERROR_MESSAGES } from "./constants";
 
 // This file mainly exists as a dumping ground for uninteresting html and CSS
 // to remove clutter and noise from the auth logic. You likely do not need
@@ -199,7 +200,7 @@ export function createAuthenticationExpiredError(): ToolResponse {
 	return {
 		content: [{
 			type: "text",
-			text: "Error: Session expired or invalid. Please re-authenticate."
+			text: "Authentication required: Your Upstox session has expired. Please re-authenticate to continue."
 		}],
 		isError: true,
 		metadata: {
@@ -207,6 +208,19 @@ export function createAuthenticationExpiredError(): ToolResponse {
 			requiresReauth: true
 		}
 	};
+}
+
+export async function handleUpstoxApiResponse(
+	response: Response,
+	sessionId: string,
+	kv: KVNamespace,
+): Promise<ToolResponse | null> {
+	if (response.ok) return null;
+	if (response.status === 401 || response.status === 403) {
+		await kv.delete(`session:${sessionId}`);
+		return createAuthenticationExpiredError();
+	}
+	throw new Error(ERROR_MESSAGES.API_ERROR);
 }
 
 export function createKVNotAvailableError(): ToolResponse {

@@ -24,23 +24,20 @@ export class MyMCP extends McpAgent {
     version: "1.0.0",
   });
 
-  private handleAuthError(toolName: string, response: ToolResponse): never | ToolResponse {
+  private handleAuthError(toolName: string, response: ToolResponse): ToolResponse {
     if (response.isError && (
-      response.metadata?.errorType === "AUTHENTICATION_EXPIRED" || 
+      response.metadata?.errorType === "AUTHENTICATION_EXPIRED" ||
       response.metadata?.errorType === "AUTHENTICATION_INVALID"
     )) {
       console.log(`Authentication error in ${toolName}`);
-      
-      // Set requiresReauth to true for authentication errors
+
       if (response.metadata) {
         response.metadata.requiresReauth = true;
       } else {
-        response.metadata = {
-          requiresReauth: true
-        };
+        response.metadata = { requiresReauth: true };
       }
     }
-    
+
     return response;
   }
 
