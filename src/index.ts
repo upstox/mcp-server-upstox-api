@@ -31,10 +31,12 @@ export class MyMCP extends McpAgent {
     )) {
       console.log(`Authentication error in ${toolName}`);
 
-      if (response.metadata) {
-        response.metadata.requiresReauth = true;
-      } else {
-        response.metadata = { requiresReauth: true };
+      if (response.metadata?.errorType === "AUTHENTICATION_EXPIRED") {
+        if (response.metadata) {
+          response.metadata.requiresReauth = true;
+        } else {
+          response.metadata = { requiresReauth: true };
+        }
       }
     }
 

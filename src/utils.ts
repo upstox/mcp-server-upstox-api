@@ -210,16 +210,43 @@ export function createAuthenticationExpiredError(): ToolResponse {
 	};
 }
 
+export function createAuthenticationInvalidError(): ToolResponse {
+	return {
+		content: [{
+			type: "text",
+			text: "Authorization failed: You do not have permission to access this resource. Please check your Upstox account permissions."
+		}],
+		isError: true,
+		metadata: {
+			errorType: "AUTHENTICATION_INVALID",
+			requiresReauth: false
+		}
+	};
+}
+
+/**
+ * Handles non-OK Upstox API responses.
+ * - Returns null if the response is OK (caller should proceed normally).
+ * - Returns a ToolResponse for auth errors (401/403) so callers can propagate them cleanly.
+ *   - 401: session is deleted from KV and an expiry error is returned.
+ *   - 403: a permission error is returned without touching the session.
+ * - Throws for all other non-OK responses, to be caught by upper-level error handling.
+ */
 export async function handleUpstoxApiResponse(
 	response: Response,
 	sessionId: string,
 	kv: KVNamespace,
 ): Promise<ToolResponse | null> {
 	if (response.ok) return null;
-	if (response.status === 401 || response.status === 403) {
+	if (response.status === 401) {
+		console.log(`Session ${sessionId} expired (401), clearing session from KV`);
 		await kv.delete(`session:${sessionId}`);
 		return createAuthenticationExpiredError();
 	}
+	if (response.status === 403) {
+		return createAuthenticationInvalidError();
+	}
+	console.error(`Upstox API error: ${response.status} ${response.statusText}`);
 	throw new Error(ERROR_MESSAGES.API_ERROR);
 }
 
