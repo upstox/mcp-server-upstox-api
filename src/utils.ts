@@ -225,13 +225,31 @@ export function createAuthenticationInvalidError(): ToolResponse {
 }
 
 /**
- * Handles non-OK Upstox API responses.
- * - Returns null if the response is OK (caller should proceed normally).
- * - Returns a ToolResponse for auth errors (401/403) so callers can propagate them cleanly.
- *   - 401: session is deleted from KV and an expiry error is returned.
- *   - 403: a permission error is returned without touching the session.
- * - Throws for all other non-OK responses, to be caught by upper-level error handling.
+ * Revokes all CF OAuth grants and their associated tokens for a given userId.
+ * This causes the MCP client's OAuth token to be rejected at the HTTP layer
+ * (HTTP 401 from CF OAuth), which triggers the client to re-initiate auth.
+ * CF OAuth KV key format: grant:{userId}:{grantId} and token:{userId}:{grantId}:{tokenId}
  */
+async function revokeAllCFOAuthGrantsForUser(userId: string, kv: KVNamespace): Promise<void> {
+	const grantsResult = await kv.list({ prefix: `grant:${userId}:` });
+	for (const grantKey of grantsResult.keys) {
+		const grantId = grantKey.name.split(':').slice(2).join(':');
+		// Delete all tokens for this grant
+		let cursor: string | undefined;
+		let done = false;
+		while (!done) {
+			const listOptions: KVNamespaceListOptions = { prefix: `token:${userId}:${grantId}:` };
+			if (cursor) listOptions.cursor = cursor;
+			const tokensResult = await kv.list(listOptions);
+			await Promise.all(tokensResult.keys.map((k) => kv.delete(k.name)));
+			if (tokensResult.list_complete) done = true;
+			else cursor = tokensResult.cursor;
+		}
+		await kv.delete(grantKey.name);
+	}
+	console.log(`Revoked all CF OAuth grants for userId: ${userId}`);
+}
+
 export async function handleUpstoxApiResponse(
 	response: Response,
 	sessionId: string,
@@ -239,8 +257,14 @@ export async function handleUpstoxApiResponse(
 ): Promise<ToolResponse | null> {
 	if (response.ok) return null;
 	if (response.status === 401) {
-		console.log(`Session ${sessionId} expired (401), clearing session from KV`);
+		console.log(`Session ${sessionId} expired (401), clearing session and CF OAuth grants from KV`);
+		const sessionData = await getValidSessionData(sessionId, kv);
 		await kv.delete(`session:${sessionId}`);
+		if (sessionData?.userId) {
+			await revokeAllCFOAuthGrantsForUser(sessionData.userId, kv);
+		} else {
+			console.warn(`Could not revoke CF OAuth grants: no userId in session ${sessionId}`);
+		}
 		return createAuthenticationExpiredError();
 	}
 	if (response.status === 403) {
