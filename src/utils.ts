@@ -261,7 +261,10 @@ export async function handleUpstoxApiResponse(
 		const sessionData = await getValidSessionData(sessionId, kv);
 		await kv.delete(`session:${sessionId}`);
 		if (sessionData?.userId) {
-			await revokeAllCFOAuthGrantsForUser(sessionData.userId, kv);
+			console.log(`Scheduling CF OAuth grant revocation for userId: ${sessionData.userId}`);
+			revokeAllCFOAuthGrantsForUser(sessionData.userId, kv).catch(err =>
+				console.error(`Failed to revoke CF OAuth grants for user ${sessionData.userId}:`, err)
+			);
 		} else {
 			console.warn(`Could not revoke CF OAuth grants: no userId in session ${sessionId}`);
 		}
