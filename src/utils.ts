@@ -200,7 +200,7 @@ export function createAuthenticationExpiredError(): ToolResponse {
 	return {
 		content: [{
 			type: "text",
-			text: "Authentication required: Your Upstox session has expired. Please re-authenticate to continue."
+			text: "Authentication required: Your Upstox session has expired. Please re-authenticate when prompted, then send your request again."
 		}],
 		isError: true,
 		metadata: {
@@ -232,9 +232,19 @@ export function createAuthenticationInvalidError(): ToolResponse {
  */
 async function revokeAllCFOAuthGrantsForUser(userId: string, kv: KVNamespace): Promise<void> {
 	const grantsResult = await kv.list({ prefix: `grant:${userId}:` });
+	if (grantsResult.keys.length === 0) {
+		console.log(`No CF OAuth grants found for userId: ${userId}`);
+		return;
+	}
+
+	// Delete grant entries first (in parallel) — this immediately invalidates the client's
+	// CF OAuth tokens, triggering re-auth on their next request without waiting for token cleanup.
+	await Promise.all(grantsResult.keys.map((k) => kv.delete(k.name)));
+	console.log(`Revoked ${grantsResult.keys.length} CF OAuth grants for userId: ${userId}`);
+
+	// Clean up orphaned token entries (grants are already invalidated above)
 	for (const grantKey of grantsResult.keys) {
 		const grantId = grantKey.name.split(':').slice(2).join(':');
-		// Delete all tokens for this grant
 		let cursor: string | undefined;
 		let done = false;
 		while (!done) {
@@ -245,9 +255,7 @@ async function revokeAllCFOAuthGrantsForUser(userId: string, kv: KVNamespace): P
 			if (tokensResult.list_complete) done = true;
 			else cursor = tokensResult.cursor;
 		}
-		await kv.delete(grantKey.name);
 	}
-	console.log(`Revoked all CF OAuth grants for userId: ${userId}`);
 }
 
 export async function handleUpstoxApiResponse(
