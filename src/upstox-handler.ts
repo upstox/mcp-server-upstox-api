@@ -7,7 +7,39 @@ import { getProfileHandler } from "./tools";
 const app = new Hono<{ Bindings: Env & { OAUTH_PROVIDER: OAuthHelpers } }>();
 
 app.get("/authorize", async (c) => {
-    const oauthRequestInfo = await c.env.OAUTH_PROVIDER.parseAuthRequest(c.req.raw);
+    const rawRequest = c.req.raw;
+    const rawClone = rawRequest.clone();
+    let oauthRequestInfo: AuthRequest;
+    try {
+        oauthRequestInfo = await c.env.OAUTH_PROVIDER.parseAuthRequest(rawRequest);
+    } catch (err) {
+        const message = err instanceof Error ? err.message : String(err);
+        if (message.includes("Invalid client") || message.includes("clientId provided does not match")) {
+            const clientId = c.req.query("client_id");
+            const redirectUri = c.req.query("redirect_uri");
+            if (clientId && redirectUri) {
+                // Library's createClient() generates a new clientId; we must register the
+                // client's ID so lookupClient finds it. Write the same shape to KV.
+                const newClient = {
+                    clientId,
+                    redirectUris: [redirectUri],
+                    grantTypes: ["authorization_code", "refresh_token"],
+                    responseTypes: ["code"],
+                    registrationDate: Math.floor(Date.now() / 1000),
+                    tokenEndpointAuthMethod: "none",
+                };
+                await c.env.OAUTH_KV.put(
+                    `client:${clientId}`,
+                    JSON.stringify(newClient)
+                );
+                oauthRequestInfo = await c.env.OAUTH_PROVIDER.parseAuthRequest(rawClone);
+            } else {
+                throw err;
+            }
+        } else {
+            throw err;
+        }
+    }
     const { clientId } = oauthRequestInfo;
     if (!clientId) {
         return c.text("Invalid request", 400);
