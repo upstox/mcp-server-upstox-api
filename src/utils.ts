@@ -4,6 +4,7 @@ import { html } from "hono/html";
 import type { HtmlEscapedString } from "hono/utils/html";
 import { marked } from "marked";
 import { ToolResponse } from "./types";
+import { ERROR_MESSAGES } from "./constants";
 
 // This file mainly exists as a dumping ground for uninteresting html and CSS
 // to remove clutter and noise from the auth logic. You likely do not need
@@ -199,7 +200,7 @@ export function createAuthenticationExpiredError(): ToolResponse {
 	return {
 		content: [{
 			type: "text",
-			text: "Error: Session expired or invalid. Please re-authenticate."
+			text: "Authentication required: Your Upstox session has expired. Please re-authenticate when prompted, then send your request again."
 		}],
 		isError: true,
 		metadata: {
@@ -207,6 +208,81 @@ export function createAuthenticationExpiredError(): ToolResponse {
 			requiresReauth: true
 		}
 	};
+}
+
+export function createAuthenticationInvalidError(): ToolResponse {
+	return {
+		content: [{
+			type: "text",
+			text: "Authorization failed: You do not have permission to access this resource. Please check your Upstox account permissions."
+		}],
+		isError: true,
+		metadata: {
+			errorType: "AUTHENTICATION_INVALID",
+			requiresReauth: false
+		}
+	};
+}
+
+/**
+ * Revokes all CF OAuth grants and their associated tokens for a given userId.
+ * This causes the MCP client's OAuth token to be rejected at the HTTP layer
+ * (HTTP 401 from CF OAuth), which triggers the client to re-initiate auth.
+ * CF OAuth KV key format: grant:{userId}:{grantId} and token:{userId}:{grantId}:{tokenId}
+ */
+async function revokeAllCFOAuthGrantsForUser(userId: string, kv: KVNamespace): Promise<void> {
+	const grantsResult = await kv.list({ prefix: `grant:${userId}:` });
+	if (grantsResult.keys.length === 0) {
+		console.log(`No CF OAuth grants found for userId: ${userId}`);
+		return;
+	}
+
+	// Delete grant entries first (in parallel) — this immediately invalidates the client's
+	// CF OAuth tokens, triggering re-auth on their next request without waiting for token cleanup.
+	await Promise.all(grantsResult.keys.map((k) => kv.delete(k.name)));
+	console.log(`Revoked ${grantsResult.keys.length} CF OAuth grants for userId: ${userId}`);
+
+	// Clean up orphaned token entries (grants are already invalidated above)
+	for (const grantKey of grantsResult.keys) {
+		const grantId = grantKey.name.split(':').slice(2).join(':');
+		let cursor: string | undefined;
+		let done = false;
+		while (!done) {
+			const listOptions: KVNamespaceListOptions = { prefix: `token:${userId}:${grantId}:` };
+			if (cursor) listOptions.cursor = cursor;
+			const tokensResult = await kv.list(listOptions);
+			await Promise.all(tokensResult.keys.map((k) => kv.delete(k.name)));
+			if (tokensResult.list_complete) done = true;
+			else cursor = tokensResult.cursor;
+		}
+	}
+}
+
+export async function handleUpstoxApiResponse(
+	response: Response,
+	sessionId: string,
+	kv: KVNamespace,
+): Promise<ToolResponse | null> {
+	if (response.ok) return null;
+	if (response.status === 401) {
+		console.log(`Session ${sessionId} expired (401), clearing session and CF OAuth grants from KV`);
+		const sessionData = await getValidSessionData(sessionId, kv);
+		await kv.delete(`session:${sessionId}`);
+		if (sessionData?.userId) {
+			console.log(`Scheduling CF OAuth grant revocation for userId: ${sessionData.userId}`);
+			revokeAllCFOAuthGrantsForUser(sessionData.userId, kv).catch(err =>
+				console.error(`Failed to revoke CF OAuth grants for user ${sessionData.userId}:`, err)
+			);
+		} else {
+			console.warn(`Could not revoke CF OAuth grants: no userId in session ${sessionId}`);
+		}
+		return createAuthenticationExpiredError();
+	}
+	if (response.status === 403) {
+		return createAuthenticationInvalidError();
+	}
+	console.error(`Upstox API error: ${response.status} ${response.statusText}`);
+	throw new Error(ERROR_MESSAGES.API_ERROR);
 }
 
 export function createKVNotAvailableError(): ToolResponse {

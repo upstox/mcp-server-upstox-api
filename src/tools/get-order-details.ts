@@ -6,7 +6,7 @@ import {
   HEADERS,
   ERROR_MESSAGES
 } from "../constants";
-import { Props, getAccessTokenFromSession, createSessionNotFoundError, createKVNotAvailableError, createAuthenticationExpiredError } from "../utils";
+import { Props, getAccessTokenFromSession, createSessionNotFoundError, createKVNotAvailableError, createAuthenticationExpiredError, handleUpstoxApiResponse } from "../utils";
 
 export const getOrderDetailsSchema = {
   orderId: z.string()
@@ -82,9 +82,8 @@ export const getOrderDetailsHandler: ToolHandler<GetOrderDetailsArgs> = async (a
     }
   });
 
-  if (!response.ok) {
-    throw new Error(ERROR_MESSAGES.API_ERROR);
-  }
+  const authError = await handleUpstoxApiResponse(response, props.sessionId, kv);
+  if (authError) return authError;
 
   const data = await response.json() as UpstoxOrderDetailsResponse;
   

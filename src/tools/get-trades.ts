@@ -6,7 +6,7 @@ import {
   HEADERS,
   ERROR_MESSAGES
 } from "../constants";
-import { Props, getAccessTokenFromSession, createSessionNotFoundError, createKVNotAvailableError, createAuthenticationExpiredError } from "../utils";
+import { Props, getAccessTokenFromSession, createSessionNotFoundError, createKVNotAvailableError, createAuthenticationExpiredError, handleUpstoxApiResponse } from "../utils";
 
 export const getTradesSchema = {
   // No parameters needed - access token comes from OAuth context
@@ -63,9 +63,8 @@ export const getTradesHandler: ToolHandler<{}> = async (args: {}, extra: { [key:
     }
   });
 
-  if (!response.ok) {
-    throw new Error(ERROR_MESSAGES.API_ERROR);
-  }
+  const authError = await handleUpstoxApiResponse(response, props.sessionId, kv);
+  if (authError) return authError;
 
   const data = await response.json() as UpstoxTradesResponse;
   
