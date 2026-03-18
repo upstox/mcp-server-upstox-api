@@ -47,61 +47,61 @@ export class MyMCP extends McpAgent {
   async init() {
     console.log("MCP Agent initialized");
 
-    this.server.tool("get-profile", getProfileSchema, async (args, extra) => {
+    this.server.tool("get-profile", getProfileSchema, { readOnlyHint: true, openWorldHint: false, destructiveHint: false }, async (args, extra) => {
       const enhancedExtra = { ...extra, props: this.props, env: this.env };
       const response = await getProfileHandler(args as {}, enhancedExtra);
       return this.handleAuthError("get-profile", response);
     });
     
-    this.server.tool("get-funds-margin", getFundsMarginSchema, async (args, extra) => {
+    this.server.tool("get-funds-margin", getFundsMarginSchema, { readOnlyHint: true, openWorldHint: false, destructiveHint: false }, async (args, extra) => {
       const enhancedExtra = { ...extra, props: this.props, env: this.env };
       const response = await getFundsMarginHandler(args as {segment?: 'SEC' | 'COM'}, enhancedExtra);
       return this.handleAuthError("get-funds-margin", response);
     });
     
-    this.server.tool("get-holdings", getHoldingsSchema, async (args, extra) => {
+    this.server.tool("get-holdings", getHoldingsSchema, { readOnlyHint: true, openWorldHint: false, destructiveHint: false }, async (args, extra) => {
       const enhancedExtra = { ...extra, props: this.props, env: this.env };
       const response = await getHoldingsHandler(args as {}, enhancedExtra);
       return this.handleAuthError("get-holdings", response);
     });
     
-    this.server.tool("get-positions", getPositionsSchema, async (args, extra) => {
+    this.server.tool("get-positions", getPositionsSchema, { readOnlyHint: true, openWorldHint: false, destructiveHint: false }, async (args, extra) => {
       const enhancedExtra = { ...extra, props: this.props, env: this.env };
       const response = await getPositionsHandler(args as {}, enhancedExtra);
       return this.handleAuthError("get-positions", response);
     });
     
-    this.server.tool("get-mtf-positions", getMtfPositionsSchema, async (args, extra) => {
+    this.server.tool("get-mtf-positions", getMtfPositionsSchema, { readOnlyHint: true, openWorldHint: false, destructiveHint: false }, async (args, extra) => {
       const enhancedExtra = { ...extra, props: this.props, env: this.env };
       const response = await getMtfPositionsHandler(args as {}, enhancedExtra);
       return this.handleAuthError("get-mtf-positions", response);
     });
     
-    this.server.tool("get-order-book", getOrderBookSchema, async (args, extra) => {
+    this.server.tool("get-order-book", getOrderBookSchema, { readOnlyHint: true, openWorldHint: false, destructiveHint: false }, async (args, extra) => {
       const enhancedExtra = { ...extra, props: this.props, env: this.env };
       const response = await getOrderBookHandler(args as {}, enhancedExtra);
       return this.handleAuthError("get-order-book", response);
     });
     
-    this.server.tool("get-order-details", getOrderDetailsSchema, async (args, extra) => {
+    this.server.tool("get-order-details", getOrderDetailsSchema, { readOnlyHint: true, openWorldHint: false, destructiveHint: false }, async (args, extra) => {
       const enhancedExtra = { ...extra, props: this.props, env: this.env };
       const response = await getOrderDetailsHandler(args as {orderId: string}, enhancedExtra);
       return this.handleAuthError("get-order-details", response);
     });
     
-    this.server.tool("get-trades", getTradesSchema, async (args, extra) => {
+    this.server.tool("get-trades", getTradesSchema, { readOnlyHint: true, openWorldHint: false, destructiveHint: false }, async (args, extra) => {
       const enhancedExtra = { ...extra, props: this.props, env: this.env };
       const response = await getTradesHandler(args as {}, enhancedExtra);
       return this.handleAuthError("get-trades", response);
     });
     
-    this.server.tool("get-order-trades", getOrderTradesSchema, async (args, extra) => {
+    this.server.tool("get-order-trades", getOrderTradesSchema, { readOnlyHint: true, openWorldHint: false, destructiveHint: false }, async (args, extra) => {
       const enhancedExtra = { ...extra, props: this.props, env: this.env };
       const response = await getOrderTradesHandler(args as {orderId: string}, enhancedExtra);
       return this.handleAuthError("get-order-trades", response);
     });
     
-    this.server.tool("get-order-history", getOrderHistorySchema, async (args, extra) => {
+    this.server.tool("get-order-history", getOrderHistorySchema, { readOnlyHint: true, openWorldHint: false, destructiveHint: false }, async (args, extra) => {
       const enhancedExtra = { ...extra, props: this.props, env: this.env };
       const response = await getOrderHistoryHandler(args as {orderId?: string; tag?: string}, enhancedExtra);
       return this.handleAuthError("get-order-history", response);
