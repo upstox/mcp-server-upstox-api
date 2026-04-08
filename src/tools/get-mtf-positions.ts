@@ -6,7 +6,7 @@ import {
   HEADERS,
   ERROR_MESSAGES
 } from "../constants";
-import { Props, getAccessTokenFromSession, createSessionNotFoundError, createKVNotAvailableError, createAuthenticationExpiredError } from "../utils";
+import { Props, getAccessTokenFromSession, createSessionNotFoundError, createKVNotAvailableError, createAuthenticationExpiredError, handleUpstoxApiResponse } from "../utils";
 
 export const getMtfPositionsSchema = {
   // No parameters needed - access token comes from session
@@ -79,9 +79,8 @@ export const getMtfPositionsHandler: ToolHandler<{}> = async (args: {}, extra: {
     }
   });
 
-  if (!response.ok) {
-    throw new Error(ERROR_MESSAGES.API_ERROR);
-  }
+  const authError = await handleUpstoxApiResponse(response, props.sessionId, kv);
+  if (authError) return authError;
 
   const data = await response.json() as UpstoxMtfPositionsResponse;
   
