@@ -66,6 +66,10 @@ export const getOrderTradesHandler: ToolHandler<{orderId: string}> = async (args
     }
   });
 
+  if (response.status === 401) {
+    return createAuthenticationExpiredError();
+  }
+
   if (!response.ok) {
     throw new Error(ERROR_MESSAGES.API_ERROR);
   }

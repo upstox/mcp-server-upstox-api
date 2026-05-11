@@ -79,6 +79,10 @@ export const getMtfPositionsHandler: ToolHandler<{}> = async (args: {}, extra: {
     }
   });
 
+  if (response.status === 401) {
+    return createAuthenticationExpiredError();
+  }
+
   if (!response.ok) {
     throw new Error(ERROR_MESSAGES.API_ERROR);
   }

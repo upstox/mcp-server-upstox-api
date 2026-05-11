@@ -63,6 +63,10 @@ export const getTradesHandler: ToolHandler<{}> = async (args: {}, extra: { [key:
     }
   });
 
+  if (response.status === 401) {
+    return createAuthenticationExpiredError();
+  }
+
   if (!response.ok) {
     throw new Error(ERROR_MESSAGES.API_ERROR);
   }
