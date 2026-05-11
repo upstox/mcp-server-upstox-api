@@ -46,43 +46,43 @@ function registerTools(server: McpServer, props: Props, env: Env) {
     return response;
   };
 
-  server.registerTool("get-profile", { title: "Get Profile", inputSchema: getProfileSchema, annotations: READ_ONLY_ANNOTATIONS }, async (args, extra) => {
+  server.registerTool("get-profile", { title: "Get Profile", description: "Fetch the authenticated Upstox user's profile: account details, enabled exchanges, supported order types, and product configurations.", inputSchema: getProfileSchema, annotations: READ_ONLY_ANNOTATIONS }, async (args, extra) => {
     return tool("get-profile", () => getProfileHandler(args as {}, { ...extra, ...ctx }));
   });
 
-  server.registerTool("get-funds-margin", { title: "Get Funds & Margin", inputSchema: getFundsMarginSchema, annotations: READ_ONLY_ANNOTATIONS }, async (args, extra) => {
+  server.registerTool("get-funds-margin", { title: "Get Funds & Margin", description: "Retrieve fund balance and margin details for the user's account. Optionally scope to a segment: 'SEC' (equity/F&O) or 'COM' (commodity); omit to return both.", inputSchema: getFundsMarginSchema, annotations: READ_ONLY_ANNOTATIONS }, async (args, extra) => {
     return tool("get-funds-margin", () => getFundsMarginHandler(args as { segment?: 'SEC' | 'COM' }, { ...extra, ...ctx }));
   });
 
-  server.registerTool("get-holdings", { title: "Get Holdings", inputSchema: getHoldingsSchema, annotations: READ_ONLY_ANNOTATIONS }, async (args, extra) => {
+  server.registerTool("get-holdings", { title: "Get Holdings", description: "Retrieve long-term equity holdings — stocks retained across previous trading sessions — with current value, quantity, average price, and P&L.", inputSchema: getHoldingsSchema, annotations: READ_ONLY_ANNOTATIONS }, async (args, extra) => {
     return tool("get-holdings", () => getHoldingsHandler(args as {}, { ...extra, ...ctx }));
   });
 
-  server.registerTool("get-positions", { title: "Get Positions", inputSchema: getPositionsSchema, annotations: READ_ONLY_ANNOTATIONS }, async (args, extra) => {
+  server.registerTool("get-positions", { title: "Get Positions", description: "Retrieve current-day trading positions with real-time P&L, quantity, and margin details for all active intraday positions.", inputSchema: getPositionsSchema, annotations: READ_ONLY_ANNOTATIONS }, async (args, extra) => {
     return tool("get-positions", () => getPositionsHandler(args as {}, { ...extra, ...ctx }));
   });
 
-  server.registerTool("get-mtf-positions", { title: "Get MTF Positions", inputSchema: getMtfPositionsSchema, annotations: READ_ONLY_ANNOTATIONS }, async (args, extra) => {
+  server.registerTool("get-mtf-positions", { title: "Get MTF Positions", description: "Retrieve Margin Trade Funding (MTF) positions with quantity, value, and margin information.", inputSchema: getMtfPositionsSchema, annotations: READ_ONLY_ANNOTATIONS }, async (args, extra) => {
     return tool("get-mtf-positions", () => getMtfPositionsHandler(args as {}, { ...extra, ...ctx }));
   });
 
-  server.registerTool("get-order-book", { title: "Get Order Book", inputSchema: getOrderBookSchema, annotations: READ_ONLY_ANNOTATIONS }, async (args, extra) => {
+  server.registerTool("get-order-book", { title: "Get Order Book", description: "Retrieve the complete order book for the trading day — all open, pending, filled, cancelled, and rejected orders.", inputSchema: getOrderBookSchema, annotations: READ_ONLY_ANNOTATIONS }, async (args, extra) => {
     return tool("get-order-book", () => getOrderBookHandler(args as {}, { ...extra, ...ctx }));
   });
 
-  server.registerTool("get-order-details", { title: "Get Order Details", inputSchema: getOrderDetailsSchema, annotations: READ_ONLY_ANNOTATIONS }, async (args, extra) => {
+  server.registerTool("get-order-details", { title: "Get Order Details", description: "Get the latest status and details for a specific order by its orderId, including execution state and fill information.", inputSchema: getOrderDetailsSchema, annotations: READ_ONLY_ANNOTATIONS }, async (args, extra) => {
     return tool("get-order-details", () => getOrderDetailsHandler(args as { orderId: string }, { ...extra, ...ctx }));
   });
 
-  server.registerTool("get-trades", { title: "Get Trades", inputSchema: getTradesSchema, annotations: READ_ONLY_ANNOTATIONS }, async (args, extra) => {
+  server.registerTool("get-trades", { title: "Get Trades", description: "Get all trades executed for the current trading day, including fill prices, quantities, and trade timestamps.", inputSchema: getTradesSchema, annotations: READ_ONLY_ANNOTATIONS }, async (args, extra) => {
     return tool("get-trades", () => getTradesHandler(args as {}, { ...extra, ...ctx }));
   });
 
-  server.registerTool("get-order-trades", { title: "Get Trades for Order", inputSchema: getOrderTradesSchema, annotations: READ_ONLY_ANNOTATIONS }, async (args, extra) => {
+  server.registerTool("get-order-trades", { title: "Get Trades for Order", description: "Retrieve all trades (fills) executed for a specific order — trade IDs, fill prices, and quantities — identified by orderId.", inputSchema: getOrderTradesSchema, annotations: READ_ONLY_ANNOTATIONS }, async (args, extra) => {
     return tool("get-order-trades", () => getOrderTradesHandler(args as { orderId: string }, { ...extra, ...ctx }));
   });
 
-  server.registerTool("get-order-history", { title: "Get Order History", inputSchema: getOrderHistorySchema, annotations: READ_ONLY_ANNOTATIONS }, async (args, extra) => {
+  server.registerTool("get-order-history", { title: "Get Order History", description: "Retrieve the full state-transition history of an order from placement through execution or rejection. Provide orderId and/or tag to scope.", inputSchema: getOrderHistorySchema, annotations: READ_ONLY_ANNOTATIONS }, async (args, extra) => {
     return tool("get-order-history", () => getOrderHistoryHandler(args as { orderId?: string; tag?: string }, { ...extra, ...ctx }));
   });
 }

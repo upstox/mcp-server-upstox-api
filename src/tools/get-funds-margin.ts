@@ -9,12 +9,10 @@ import {
 import { Props, getAccessTokenFromSession, createSessionNotFoundError, createKVNotAvailableError, createAuthenticationExpiredError } from "../utils";
 
 export const getFundsMarginSchema = {
-  segment: z.enum(["SEC", "COM"]).optional()
+  segment: z.enum(["SEC", "COM"]).optional().describe("Segment filter: 'SEC' for equity & F&O, 'COM' for commodity. Omit to return aggregated funds for both segments.")
 };
 
-const GetFundsMarginArgsSchema = z.object({
-  segment: z.enum(["SEC", "COM"]).optional()
-});
+const GetFundsMarginArgsSchema = z.object(getFundsMarginSchema);
 
 interface UpstoxFundsMarginResponse {
   status: string;

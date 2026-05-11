@@ -9,7 +9,7 @@ import {
 import { Props, getAccessTokenFromSession, createSessionNotFoundError, createKVNotAvailableError, createAuthenticationExpiredError } from "../utils";
 
 export const getOrderTradesSchema = {
-  orderId: z.string().min(1, "Order ID is required")
+  orderId: z.string().min(1, "Order ID is required").describe("Upstox order ID whose executed trade fills you want to fetch.")
 };
 
 const GetOrderTradesArgsSchema = z.object(getOrderTradesSchema);

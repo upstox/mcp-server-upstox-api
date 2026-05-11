@@ -9,8 +9,8 @@ import {
 import { Props, getAccessTokenFromSession, createSessionNotFoundError, createKVNotAvailableError, createAuthenticationExpiredError } from "../utils";
 
 export const getOrderHistorySchema = {
-  orderId: z.string().optional(),
-  tag: z.string().optional()
+  orderId: z.string().optional().describe("Upstox order ID to fetch the status history for. Optional — omit when filtering by tag or to return today's full history."),
+  tag: z.string().optional().describe("User-supplied tag attached at order placement. Optional — filters history to orders carrying this tag.")
 };
 
 const GetOrderHistoryArgsSchema = z.object(getOrderHistorySchema);
