@@ -38,54 +38,52 @@ function applyAuthErrorMetadata(toolName: string, response: ToolResponse): ToolR
 function registerTools(server: McpServer, props: Props, env: Env) {
   const ctx = { props, env };
 
-  server.tool("get-profile", getProfileSchema, READ_ONLY_ANNOTATIONS, async (args, extra) => {
-    const response = await getProfileHandler(args as {}, { ...extra, ...ctx });
-    return applyAuthErrorMetadata("get-profile", response);
+  const tool = async (name: string, fn: () => Promise<ToolResponse>): Promise<ToolResponse> => {
+    const response = applyAuthErrorMetadata(name, await fn());
+    if (response.isError && response.metadata?.requiresReauth) {
+      console.log(`[mcp] auth error in ${name} — signalling re-auth`);
+    }
+    return response;
+  };
+
+  server.registerTool("get-profile", { title: "Get Profile", inputSchema: getProfileSchema, annotations: READ_ONLY_ANNOTATIONS }, async (args, extra) => {
+    return tool("get-profile", () => getProfileHandler(args as {}, { ...extra, ...ctx }));
   });
 
-  server.tool("get-funds-margin", getFundsMarginSchema, READ_ONLY_ANNOTATIONS, async (args, extra) => {
-    const response = await getFundsMarginHandler(args as { segment?: 'SEC' | 'COM' }, { ...extra, ...ctx });
-    return applyAuthErrorMetadata("get-funds-margin", response);
+  server.registerTool("get-funds-margin", { title: "Get Funds & Margin", inputSchema: getFundsMarginSchema, annotations: READ_ONLY_ANNOTATIONS }, async (args, extra) => {
+    return tool("get-funds-margin", () => getFundsMarginHandler(args as { segment?: 'SEC' | 'COM' }, { ...extra, ...ctx }));
   });
 
-  server.tool("get-holdings", getHoldingsSchema, READ_ONLY_ANNOTATIONS, async (args, extra) => {
-    const response = await getHoldingsHandler(args as {}, { ...extra, ...ctx });
-    return applyAuthErrorMetadata("get-holdings", response);
+  server.registerTool("get-holdings", { title: "Get Holdings", inputSchema: getHoldingsSchema, annotations: READ_ONLY_ANNOTATIONS }, async (args, extra) => {
+    return tool("get-holdings", () => getHoldingsHandler(args as {}, { ...extra, ...ctx }));
   });
 
-  server.tool("get-positions", getPositionsSchema, READ_ONLY_ANNOTATIONS, async (args, extra) => {
-    const response = await getPositionsHandler(args as {}, { ...extra, ...ctx });
-    return applyAuthErrorMetadata("get-positions", response);
+  server.registerTool("get-positions", { title: "Get Positions", inputSchema: getPositionsSchema, annotations: READ_ONLY_ANNOTATIONS }, async (args, extra) => {
+    return tool("get-positions", () => getPositionsHandler(args as {}, { ...extra, ...ctx }));
   });
 
-  server.tool("get-mtf-positions", getMtfPositionsSchema, READ_ONLY_ANNOTATIONS, async (args, extra) => {
-    const response = await getMtfPositionsHandler(args as {}, { ...extra, ...ctx });
-    return applyAuthErrorMetadata("get-mtf-positions", response);
+  server.registerTool("get-mtf-positions", { title: "Get MTF Positions", inputSchema: getMtfPositionsSchema, annotations: READ_ONLY_ANNOTATIONS }, async (args, extra) => {
+    return tool("get-mtf-positions", () => getMtfPositionsHandler(args as {}, { ...extra, ...ctx }));
   });
 
-  server.tool("get-order-book", getOrderBookSchema, READ_ONLY_ANNOTATIONS, async (args, extra) => {
-    const response = await getOrderBookHandler(args as {}, { ...extra, ...ctx });
-    return applyAuthErrorMetadata("get-order-book", response);
+  server.registerTool("get-order-book", { title: "Get Order Book", inputSchema: getOrderBookSchema, annotations: READ_ONLY_ANNOTATIONS }, async (args, extra) => {
+    return tool("get-order-book", () => getOrderBookHandler(args as {}, { ...extra, ...ctx }));
   });
 
-  server.tool("get-order-details", getOrderDetailsSchema, READ_ONLY_ANNOTATIONS, async (args, extra) => {
-    const response = await getOrderDetailsHandler(args as { orderId: string }, { ...extra, ...ctx });
-    return applyAuthErrorMetadata("get-order-details", response);
+  server.registerTool("get-order-details", { title: "Get Order Details", inputSchema: getOrderDetailsSchema, annotations: READ_ONLY_ANNOTATIONS }, async (args, extra) => {
+    return tool("get-order-details", () => getOrderDetailsHandler(args as { orderId: string }, { ...extra, ...ctx }));
   });
 
-  server.tool("get-trades", getTradesSchema, READ_ONLY_ANNOTATIONS, async (args, extra) => {
-    const response = await getTradesHandler(args as {}, { ...extra, ...ctx });
-    return applyAuthErrorMetadata("get-trades", response);
+  server.registerTool("get-trades", { title: "Get Trades", inputSchema: getTradesSchema, annotations: READ_ONLY_ANNOTATIONS }, async (args, extra) => {
+    return tool("get-trades", () => getTradesHandler(args as {}, { ...extra, ...ctx }));
   });
 
-  server.tool("get-order-trades", getOrderTradesSchema, READ_ONLY_ANNOTATIONS, async (args, extra) => {
-    const response = await getOrderTradesHandler(args as { orderId: string }, { ...extra, ...ctx });
-    return applyAuthErrorMetadata("get-order-trades", response);
+  server.registerTool("get-order-trades", { title: "Get Trades for Order", inputSchema: getOrderTradesSchema, annotations: READ_ONLY_ANNOTATIONS }, async (args, extra) => {
+    return tool("get-order-trades", () => getOrderTradesHandler(args as { orderId: string }, { ...extra, ...ctx }));
   });
 
-  server.tool("get-order-history", getOrderHistorySchema, READ_ONLY_ANNOTATIONS, async (args, extra) => {
-    const response = await getOrderHistoryHandler(args as { orderId?: string; tag?: string }, { ...extra, ...ctx });
-    return applyAuthErrorMetadata("get-order-history", response);
+  server.registerTool("get-order-history", { title: "Get Order History", inputSchema: getOrderHistorySchema, annotations: READ_ONLY_ANNOTATIONS }, async (args, extra) => {
+    return tool("get-order-history", () => getOrderHistoryHandler(args as { orderId?: string; tag?: string }, { ...extra, ...ctx }));
   });
 }
 
