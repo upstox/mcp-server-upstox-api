@@ -12,7 +12,11 @@ import {
   getOrderDetailsSchema, getOrderDetailsHandler,
   getTradesSchema, getTradesHandler,
   getOrderTradesSchema, getOrderTradesHandler,
-  getOrderHistorySchema, getOrderHistoryHandler
+  getOrderHistorySchema, getOrderHistoryHandler,
+  getMfHoldingsSchema, getMfHoldingsHandler,
+  getMfOrderBookSchema, getMfOrderBookHandler,
+  getMfOrderDetailsSchema, getMfOrderDetailsHandler,
+  getMfSipsSchema, getMfSipsHandler
 } from "./tools";
 import UpstoxHandler from "./upstox-handler";
 import { Props, getTTLUntil330AMIST } from "./utils";
@@ -84,6 +88,22 @@ function registerTools(server: McpServer, props: Props, env: Env) {
 
   server.registerTool("get-order-history", { title: "Get Order History", description: "Retrieve the full state-transition history of an order from placement through execution or rejection. Provide orderId and/or tag to scope.", inputSchema: getOrderHistorySchema, annotations: READ_ONLY_ANNOTATIONS }, async (args, extra) => {
     return tool("get-order-history", () => getOrderHistoryHandler(args as { orderId?: string; tag?: string }, { ...extra, ...ctx }));
+  });
+
+  server.registerTool("get-mf-holdings", { title: "Get Mutual Fund Holdings", description: "Retrieve the user's mutual fund holdings — units, last NAV, unrealized P&L, folio, and ISIN.", inputSchema: getMfHoldingsSchema, annotations: READ_ONLY_ANNOTATIONS }, async (args, extra) => {
+    return tool("get-mf-holdings", () => getMfHoldingsHandler(args as {}, { ...extra, ...ctx }));
+  });
+
+  server.registerTool("get-mf-order-book", { title: "Get Mutual Fund Order Book", description: "Retrieve a paginated list of mutual fund orders. Optional filters: status, transaction_type (BUY/SELL/ALL), page_number, records (max 30).", inputSchema: getMfOrderBookSchema, annotations: READ_ONLY_ANNOTATIONS }, async (args, extra) => {
+    return tool("get-mf-order-book", () => getMfOrderBookHandler(args as { status?: string; transaction_type?: 'BUY' | 'SELL' | 'ALL'; page_number?: number; records?: number }, { ...extra, ...ctx }));
+  });
+
+  server.registerTool("get-mf-order-details", { title: "Get Mutual Fund Order Details", description: "Get status and full details for a specific mutual fund order by orderId — fund, folio, amount, units, and execution details.", inputSchema: getMfOrderDetailsSchema, annotations: READ_ONLY_ANNOTATIONS }, async (args, extra) => {
+    return tool("get-mf-order-details", () => getMfOrderDetailsHandler(args as { orderId: string }, { ...extra, ...ctx }));
+  });
+
+  server.registerTool("get-mf-sips", { title: "Get Mutual Fund SIPs", description: "List the user's active and paused mutual fund SIP registrations. Paginated (records max 30).", inputSchema: getMfSipsSchema, annotations: READ_ONLY_ANNOTATIONS }, async (args, extra) => {
+    return tool("get-mf-sips", () => getMfSipsHandler(args as { page_number?: number; records?: number }, { ...extra, ...ctx }));
   });
 }
 

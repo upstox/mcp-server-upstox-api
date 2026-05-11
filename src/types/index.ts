@@ -49,6 +49,22 @@ export interface GetOrderDetailsArgs {
   orderId: string;
 }
 
+export interface GetMfOrderBookArgs {
+  status?: string;
+  transaction_type?: 'BUY' | 'SELL' | 'ALL';
+  page_number?: number;
+  records?: number;
+}
+
+export interface GetMfOrderDetailsArgs {
+  orderId: string;
+}
+
+export interface GetMfSipsArgs {
+  page_number?: number;
+  records?: number;
+}
+
 export interface ToolEnv extends Env {
   OAUTH_PROVIDER: OAuthHelpers;
 }
