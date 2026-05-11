@@ -91,6 +91,13 @@ function registerTools(server: McpServer, props: Props, env: Env) {
 
 const mcpApiHandler = {
   async fetch(request: Request, env: Env, ctx: ExecutionContext & { props: Props }): Promise<Response> {
+    if (request.method !== "POST") {
+      return new Response("Method Not Allowed", {
+        status: 405,
+        headers: { Allow: "POST" },
+      });
+    }
+
     const server = new McpServer({
       name: "Upstox MCP Agent",
       version: "1.0.0",
@@ -104,7 +111,18 @@ const mcpApiHandler = {
     });
 
     await server.connect(transport);
-    return transport.handleRequest(request);
+    const response = await transport.handleRequest(request);
+    ctx.waitUntil(
+      (async () => {
+        try {
+          await transport.close();
+          await server.close();
+        } catch {
+          // best-effort cleanup
+        }
+      })(),
+    );
+    return response;
   },
 };
 

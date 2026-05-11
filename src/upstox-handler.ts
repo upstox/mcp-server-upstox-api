@@ -85,7 +85,6 @@ app.get("/callback", async (c) => {
     });
 
     if (error) return error;
-    console.log(tokenDataStr);
 
     // Parse the token response which includes user profile data
     const userData = JSON.parse(tokenDataStr!);
