@@ -146,6 +146,34 @@ You can interact with the Upstox API through natural language prompts. Here are 
 - "List all my completed trades for the day"
 - "Show me my trade details with execution prices"
 
+### IPOs
+- "Which IPOs are open right now?"
+- "Show me the upcoming SME IPOs"
+- "List the IPOs that were listed recently"
+- "What's the subscription level on the currently open IPOs?"
+- "Show me the next 10 open mainboard IPOs"
+
+### IPO Details
+- "Show me the details of the IPO xxxxxxxxxxxxxxx"
+- "What's the lot size and minimum quantity for IPO xxxxxxxxxxxxxxx"
+- "When is the allotment and listing date for IPO xxxxxxxxxxxxxxx"
+- "Who is the registrar for IPO xxxxxxxxxxxxxxx"
+- "Give me the price band and cut-off price for IPO xxxxxxxxxxxxxxx"
+
+### IPO Orders
+- "What IPOs have I applied for?"
+- "Show me my IPO applications and their allotment status"
+- "Did I get an allotment on any of my IPO applications?"
+- "What's the UPI mandate status on my IPO applications?"
+- "How much money is blocked against my IPO applications?"
+
+### IPO Order Details
+- "Show me the details of my IPO application xxxxxxxxxxxxxxx"
+- "What bids did I place on IPO application xxxxxxxxxxxxxxx"
+- "How many units were allotted for my IPO application xxxxxxxxxxxxxxx"
+- "Why was my IPO application xxxxxxxxxxxxxxx rejected?"
+- "When was IPO application xxxxxxxxxxxxxxx submitted to the exchange?"
+
 ## Available Endpoints
 
 | Endpoint | Method | Description |
@@ -160,5 +188,9 @@ You can interact with the Upstox API through natural language prompts. Here are 
 | `/get-order-trades` | GET | Fetch trades executed for a specific order using order ID |
 | `/get-order-history` | GET | Fetch order history using either order ID or tag |
 | `/get-trades` | GET | Fetch user's trades executed for the current day |
+| `/get-ipos` | GET | List publicly available IPOs. Optional filters: `status` ('open', 'closed', 'listed', 'upcoming'), `issueType` ('regular', 'sme'), plus `pageNumber` and `records` (max 30) for pagination |
+| `/get-ipo-details` | GET | Fetch full details of a single IPO using its IPO id, including lot size, cut-off price, prospectus links, registrar info and the allotment/listing timeline |
+| `/get-ipo-orders` | GET | Fetch the user's own IPO applications with bids, allotment, UPI mandate and payment status. Optional `pageNumber` and `records` (max 30) for pagination |
+| `/get-ipo-order-details` | GET | Fetch a single one of the user's IPO applications using its application id |
 
 
