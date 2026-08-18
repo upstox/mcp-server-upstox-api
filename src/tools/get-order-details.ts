@@ -9,12 +9,10 @@ import {
 import { Props, getAccessTokenFromSession, createSessionNotFoundError, createKVNotAvailableError, createAuthenticationExpiredError } from "../utils";
 
 export const getOrderDetailsSchema = {
-  orderId: z.string()
+  orderId: z.string().describe("Upstox order ID returned by the order placement API (e.g. '230918000123456').")
 };
 
-const GetOrderDetailsArgsSchema = z.object({
-  orderId: z.string()
-});
+const GetOrderDetailsArgsSchema = z.object(getOrderDetailsSchema);
 
 interface UpstoxOrderDetailsResponse {
   status: string;
@@ -81,6 +79,10 @@ export const getOrderDetailsHandler: ToolHandler<GetOrderDetailsArgs> = async (a
       "Authorization": `Bearer ${accessToken}`
     }
   });
+
+  if (response.status === 401) {
+    return createAuthenticationExpiredError();
+  }
 
   if (!response.ok) {
     throw new Error(ERROR_MESSAGES.API_ERROR);

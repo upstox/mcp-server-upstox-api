@@ -9,7 +9,7 @@ import {
 import { Props, getAccessTokenFromSession, createSessionNotFoundError, createKVNotAvailableError, createAuthenticationExpiredError } from "../utils";
 
 export const getOrderTradesSchema = {
-  orderId: z.string().min(1, "Order ID is required")
+  orderId: z.string().min(1, "Order ID is required").describe("Upstox order ID whose executed trade fills you want to fetch.")
 };
 
 const GetOrderTradesArgsSchema = z.object(getOrderTradesSchema);
@@ -65,6 +65,10 @@ export const getOrderTradesHandler: ToolHandler<{orderId: string}> = async (args
       "Authorization": `Bearer ${accessToken}`
     }
   });
+
+  if (response.status === 401) {
+    return createAuthenticationExpiredError();
+  }
 
   if (!response.ok) {
     throw new Error(ERROR_MESSAGES.API_ERROR);

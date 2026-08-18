@@ -1,59 +1,42 @@
 import { z } from "zod";
 import { ToolHandler, ToolResponse, ToolEnv } from "../types";
-import { 
-  UPSTOX_API_BASE_URL, 
-  UPSTOX_API_PROFILE_ENDPOINT,
+import {
+  UPSTOX_API_BASE_URL,
+  UPSTOX_API_MF_HOLDINGS_ENDPOINT,
   HEADERS,
   ERROR_MESSAGES
 } from "../constants";
 import { Props, getAccessTokenFromSession, createSessionNotFoundError, createKVNotAvailableError, createAuthenticationExpiredError } from "../utils";
 
-export const getProfileSchema = {
-  // No parameters needed - access token comes from session
-};
+export const getMfHoldingsSchema = {};
 
-const GetProfileArgsSchema = z.object(getProfileSchema);
+const GetMfHoldingsArgsSchema = z.object({});
 
-interface UpstoxProfileResponse {
+interface UpstoxMfHoldingsResponse {
   status: string;
-  data: {
-    email: string;
-    exchanges: string[];
-    products: string[];
-    broker: string;
-    user_id: string;
-    user_name: string;
-    order_types: string[];
-    user_type: string;
-    poa: boolean;
-    ddpi: boolean;
-    is_active: boolean;
-  };
+  data: Array<Record<string, unknown>>;
 }
 
-export const getProfileHandler: ToolHandler<{}> = async (args: {}, extra: { [key: string]: unknown }): Promise<ToolResponse> => {
-  const validatedArgs = GetProfileArgsSchema.parse(args);
-  
-  // Get session ID from props
+export const getMfHoldingsHandler: ToolHandler<{}> = async (args: {}, extra: { [key: string]: unknown }): Promise<ToolResponse> => {
+  GetMfHoldingsArgsSchema.parse(args);
+
   const props = extra.props as Props;
   if (!props?.sessionId) {
     return createSessionNotFoundError();
   }
-  
+
   const env = extra.env as ToolEnv;
-  // Get KV namespace from environment
-  const kv = (env)?.OAUTH_KV;
+  const kv = env?.OAUTH_KV;
   if (!kv) {
     return createKVNotAvailableError();
   }
-  
-  // Get access token from session
+
   const accessToken = await getAccessTokenFromSession(props.sessionId, kv);
   if (!accessToken) {
     return createAuthenticationExpiredError();
   }
-  
-  const response = await fetch(`${UPSTOX_API_BASE_URL}${UPSTOX_API_PROFILE_ENDPOINT}`, {
+
+  const response = await fetch(`${UPSTOX_API_BASE_URL}${UPSTOX_API_MF_HOLDINGS_ENDPOINT}`, {
     method: "GET",
     headers: {
       "Accept": HEADERS.ACCEPT,
@@ -69,8 +52,8 @@ export const getProfileHandler: ToolHandler<{}> = async (args: {}, extra: { [key
     throw new Error(ERROR_MESSAGES.API_ERROR);
   }
 
-  const data = await response.json() as UpstoxProfileResponse;
-  
+  const data = await response.json() as UpstoxMfHoldingsResponse;
+
   return {
     content: [{
       type: "text",
