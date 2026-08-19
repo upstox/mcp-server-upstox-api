@@ -113,10 +113,10 @@ describe("getIpoOrdersHandler", () => {
     expect(fetchedUrl()).toBe("https://api.upstox.com/v2/ipos/orders");
   });
 
-  it("should map camelCase args onto snake_case query parameters", async () => {
+  it("should pass the supplied pagination parameters through to the query string", async () => {
     mockFetchOk();
 
-    await getIpoOrdersHandler({ pageNumber: 3, records: 25 }, buildExtra());
+    await getIpoOrdersHandler({ page_number: 3, records: 25 }, buildExtra());
 
     const url = new URL(fetchedUrl());
     expect(url.pathname).toBe("/v2/ipos/orders");
@@ -142,14 +142,26 @@ describe("getIpoOrdersHandler", () => {
 
   it("should reject a page number below 1", async () => {
     await expect(
-      getIpoOrdersHandler({ pageNumber: 0 }, buildExtra())
+      getIpoOrdersHandler({ page_number: 0 }, buildExtra())
     ).rejects.toThrow();
+  });
+
+  it("should surface a 401 as an expired session that requires re-authentication", async () => {
+    global.fetch = vi.fn().mockResolvedValue({
+      ok: false,
+      status: 401
+    });
+
+    const result = await getIpoOrdersHandler({}, buildExtra());
+    expect(result.isError).toBe(true);
+    expect(result.metadata?.errorType).toBe("AUTHENTICATION_EXPIRED");
+    expect(result.metadata?.requiresReauth).toBe(true);
   });
 
   it("should handle API errors", async () => {
     global.fetch = vi.fn().mockResolvedValue({
       ok: false,
-      status: 401
+      status: 500
     });
 
     await expect(getIpoOrdersHandler({}, buildExtra())).rejects.toThrow(

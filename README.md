@@ -188,9 +188,9 @@ You can interact with the Upstox API through natural language prompts. Here are 
 | `/get-order-trades` | GET | Fetch trades executed for a specific order using order ID |
 | `/get-order-history` | GET | Fetch order history using either order ID or tag |
 | `/get-trades` | GET | Fetch user's trades executed for the current day |
-| `/get-ipos` | GET | List publicly available IPOs. Optional filters: `status` ('open', 'closed', 'listed', 'upcoming'), `issueType` ('regular', 'sme'), plus `pageNumber` and `records` (max 30) for pagination |
+| `/get-ipos` | GET | List publicly available IPOs. Optional filters: `status` ('open', 'closed', 'listed', 'upcoming'), `issue_type` ('regular', 'sme'), plus `page_number` and `records` (max 30) for pagination |
 | `/get-ipo-details` | GET | Fetch full details of a single IPO using its IPO id, including lot size, cut-off price, prospectus links, registrar info and the allotment/listing timeline |
-| `/get-ipo-orders` | GET | Fetch the user's own IPO applications with bids, allotment, UPI mandate and payment status. Optional `pageNumber` and `records` (max 30) for pagination |
+| `/get-ipo-orders` | GET | Fetch the user's own IPO applications with bids, allotment, UPI mandate and payment status. Optional `page_number` and `records` (max 30) for pagination |
 | `/get-ipo-order-details` | GET | Fetch a single one of the user's IPO applications using its application id |
 
 

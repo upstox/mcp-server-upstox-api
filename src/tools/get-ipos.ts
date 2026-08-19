@@ -1,5 +1,5 @@
 import { z } from "zod";
-import { ToolHandler, ToolResponse, ToolEnv } from "../types";
+import { ToolHandler, ToolResponse, ToolEnv, GetIposArgs } from "../types";
 import {
   UPSTOX_API_BASE_URL,
   UPSTOX_API_IPOS_ENDPOINT,
@@ -9,10 +9,14 @@ import {
 import { Props, getAccessTokenFromSession, createSessionNotFoundError, createKVNotAvailableError, createAuthenticationExpiredError } from "../utils";
 
 export const getIposSchema = {
-  status: z.enum(["open", "closed", "listed", "upcoming"]).optional(),
-  issueType: z.enum(["regular", "sme"]).optional(),
-  pageNumber: z.number().int().min(1).optional(),
+  status: z.enum(["open", "closed", "listed", "upcoming"]).optional()
+    .describe("IPO lifecycle status. Default: open."),
+  issue_type: z.enum(["regular", "sme"]).optional()
+    .describe("Market segment: regular (mainboard) or sme."),
+  page_number: z.number().int().min(1).optional()
+    .describe("Page number, starting from 1. Default: 1."),
   records: z.number().int().min(1).max(30).optional()
+    .describe("Items per page (max 30). Default: 20.")
 };
 
 const GetIposArgsSchema = z.object(getIposSchema);
@@ -40,7 +44,7 @@ interface UpstoxIposResponse {
   meta_data?: Record<string, unknown>;
 }
 
-export const getIposHandler: ToolHandler<{status?: "open" | "closed" | "listed" | "upcoming"; issueType?: "regular" | "sme"; pageNumber?: number; records?: number}> = async (args: {status?: "open" | "closed" | "listed" | "upcoming"; issueType?: "regular" | "sme"; pageNumber?: number; records?: number}, extra: { [key: string]: unknown }): Promise<ToolResponse> => {
+export const getIposHandler: ToolHandler<GetIposArgs> = async (args: GetIposArgs, extra: { [key: string]: unknown }): Promise<ToolResponse> => {
   const validatedArgs = GetIposArgsSchema.parse(args);
 
   // Get session ID from props
@@ -68,11 +72,11 @@ export const getIposHandler: ToolHandler<{status?: "open" | "closed" | "listed" 
   if (validatedArgs.status) {
     url.searchParams.append('status', validatedArgs.status);
   }
-  if (validatedArgs.issueType) {
-    url.searchParams.append('issue_type', validatedArgs.issueType);
+  if (validatedArgs.issue_type) {
+    url.searchParams.append('issue_type', validatedArgs.issue_type);
   }
-  if (validatedArgs.pageNumber !== undefined) {
-    url.searchParams.append('page_number', String(validatedArgs.pageNumber));
+  if (validatedArgs.page_number !== undefined) {
+    url.searchParams.append('page_number', String(validatedArgs.page_number));
   }
   if (validatedArgs.records !== undefined) {
     url.searchParams.append('records', String(validatedArgs.records));
@@ -85,6 +89,10 @@ export const getIposHandler: ToolHandler<{status?: "open" | "closed" | "listed" 
       "Authorization": `Bearer ${accessToken}`
     }
   });
+
+  if (response.status === 401) {
+    return createAuthenticationExpiredError();
+  }
 
   if (!response.ok) {
     throw new Error(ERROR_MESSAGES.API_ERROR);

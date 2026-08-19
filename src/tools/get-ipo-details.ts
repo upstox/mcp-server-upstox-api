@@ -1,5 +1,5 @@
 import { z } from "zod";
-import { ToolHandler, ToolResponse, ToolEnv } from "../types";
+import { ToolHandler, ToolResponse, ToolEnv, GetIpoDetailsArgs } from "../types";
 import {
   UPSTOX_API_BASE_URL,
   UPSTOX_API_IPOS_ENDPOINT,
@@ -63,7 +63,7 @@ interface UpstoxIpoDetailsResponse {
   };
 }
 
-export const getIpoDetailsHandler: ToolHandler<{ipoId: string}> = async (args: {ipoId: string}, extra: { [key: string]: unknown }): Promise<ToolResponse> => {
+export const getIpoDetailsHandler: ToolHandler<GetIpoDetailsArgs> = async (args: GetIpoDetailsArgs, extra: { [key: string]: unknown }): Promise<ToolResponse> => {
   const validatedArgs = GetIpoDetailsArgsSchema.parse(args);
 
   // Get session ID from props
@@ -96,6 +96,10 @@ export const getIpoDetailsHandler: ToolHandler<{ipoId: string}> = async (args: {
       "Authorization": `Bearer ${accessToken}`
     }
   });
+
+  if (response.status === 401) {
+    return createAuthenticationExpiredError();
+  }
 
   if (!response.ok) {
     throw new Error(ERROR_MESSAGES.API_ERROR);

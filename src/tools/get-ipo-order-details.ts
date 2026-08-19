@@ -1,5 +1,5 @@
 import { z } from "zod";
-import { ToolHandler, ToolResponse, ToolEnv } from "../types";
+import { ToolHandler, ToolResponse, ToolEnv, GetIpoOrderDetailsArgs, UpstoxIpoOrder } from "../types";
 import {
   UPSTOX_API_BASE_URL,
   UPSTOX_API_IPO_ORDERS_ENDPOINT,
@@ -17,39 +17,10 @@ const GetIpoOrderDetailsArgsSchema = z.object(getIpoOrderDetailsSchema);
 
 interface UpstoxIpoOrderDetailsResponse {
   status: string;
-  data: {
-    id: string;
-    symbol: string;
-    exchange: string;
-    order_id: string;
-    status: string;
-    order_status: string;
-    payment_status: string;
-    category: string;
-    issue_type: string;
-    reason: string | null;
-    upi: string;
-    upi_amount_blocked: string;
-    nse_submitted_date: string | null;
-    bse_submitted_date: string | null;
-    mandate_approved_date: string | null;
-    rejection_date: string | null;
-    mandate_rejection_date: string | null;
-    cancel_requested_date: string | null;
-    cancel_accepted_date: string | null;
-    units_allotted: number;
-    bids: Array<{
-      quantity: number;
-      price: number;
-      amount: number;
-      message: string | null;
-    }>;
-    created_at: string;
-    last_updated_at: string;
-  };
+  data: UpstoxIpoOrder;
 }
 
-export const getIpoOrderDetailsHandler: ToolHandler<{orderId: string}> = async (args: {orderId: string}, extra: { [key: string]: unknown }): Promise<ToolResponse> => {
+export const getIpoOrderDetailsHandler: ToolHandler<GetIpoOrderDetailsArgs> = async (args: GetIpoOrderDetailsArgs, extra: { [key: string]: unknown }): Promise<ToolResponse> => {
   const validatedArgs = GetIpoOrderDetailsArgsSchema.parse(args);
 
   // Get session ID from props
@@ -82,6 +53,10 @@ export const getIpoOrderDetailsHandler: ToolHandler<{orderId: string}> = async (
       "Authorization": `Bearer ${accessToken}`
     }
   });
+
+  if (response.status === 401) {
+    return createAuthenticationExpiredError();
+  }
 
   if (!response.ok) {
     throw new Error(ERROR_MESSAGES.API_ERROR);

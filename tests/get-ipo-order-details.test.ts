@@ -134,6 +134,18 @@ describe("getIpoOrderDetailsHandler", () => {
     expect((options.headers as Record<string, string>)["Accept"]).toBe("application/json");
   });
 
+  it("should surface a 401 as an expired session that requires re-authentication", async () => {
+    global.fetch = vi.fn().mockResolvedValue({
+      ok: false,
+      status: 401
+    });
+
+    const result = await getIpoOrderDetailsHandler({ orderId: "APP123456789" }, buildExtra());
+    expect(result.isError).toBe(true);
+    expect(result.metadata?.errorType).toBe("AUTHENTICATION_EXPIRED");
+    expect(result.metadata?.requiresReauth).toBe(true);
+  });
+
   it("should handle API errors", async () => {
     global.fetch = vi.fn().mockResolvedValue({
       ok: false,

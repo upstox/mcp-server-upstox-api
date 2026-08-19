@@ -110,7 +110,7 @@ function registerTools(server: McpServer, props: Props, env: Env) {
     return tool("get-mf-sips", () => getMfSipsHandler(args as { page_number?: number; records?: number }, { ...extra, ...ctx }));
   });
   server.registerTool("get-ipos", { title: "Get IPOs", description: "List publicly available IPOs on NSE/BSE with their price band, lot details, bidding window and subscription level. Filter by lifecycle status and market segment. This returns market-wide IPO data, not the user's own applications - use get-ipo-orders for those.", inputSchema: getIposSchema, annotations: READ_ONLY_ANNOTATIONS }, async (args, extra) => {
-    return tool("get-ipos", () => getIposHandler(args as { status?: "open" | "closed" | "listed" | "upcoming"; issueType?: "regular" | "sme"; pageNumber?: number; records?: number }, { ...extra, ...ctx }));
+    return tool("get-ipos", () => getIposHandler(args as { status?: "open" | "closed" | "listed" | "upcoming"; issue_type?: "regular" | "sme"; page_number?: number; records?: number }, { ...extra, ...ctx }));
   });
 
   server.registerTool("get-ipo-details", { title: "Get IPO Details", description: "Fetch the full public details of a single IPO, including face value, lot size, minimum quantity, cut-off price, prospectus links, registrar contact details and the allotment/listing/refund timeline. Requires the IPO id slug from get-ipos (for example autofurnish-limited-ipo).", inputSchema: getIpoDetailsSchema, annotations: READ_ONLY_ANNOTATIONS }, async (args, extra) => {
@@ -118,7 +118,7 @@ function registerTools(server: McpServer, props: Props, env: Env) {
   });
 
   server.registerTool("get-ipo-orders", { title: "Get IPO Orders", description: "Fetch the authenticated user's own IPO applications (bids), including the bids placed, units allotted, application status, UPI mandate and payment status. Paginated. Use get-ipos for publicly listed IPOs.", inputSchema: getIpoOrdersSchema, annotations: READ_ONLY_ANNOTATIONS }, async (args, extra) => {
-    return tool("get-ipo-orders", () => getIpoOrdersHandler(args as { pageNumber?: number; records?: number }, { ...extra, ...ctx }));
+    return tool("get-ipo-orders", () => getIpoOrdersHandler(args as { page_number?: number; records?: number }, { ...extra, ...ctx }));
   });
 
   server.registerTool("get-ipo-order-details", { title: "Get IPO Order Details", description: "Fetch one of the authenticated user's IPO applications by its application id, including per-bid quantity and price, units allotted, exchange submission and mandate timestamps, and any rejection or cancellation reason. Requires an application id from get-ipo-orders.", inputSchema: getIpoOrderDetailsSchema, annotations: READ_ONLY_ANNOTATIONS }, async (args, extra) => {

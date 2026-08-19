@@ -106,11 +106,11 @@ describe("getIposHandler", () => {
     expect(fetchedUrl()).toBe("https://api.upstox.com/v2/ipos");
   });
 
-  it("should map camelCase args onto snake_case query parameters", async () => {
+  it("should pass the supplied filters through as query parameters", async () => {
     mockFetchOk();
 
     await getIposHandler(
-      { status: "upcoming", issueType: "sme", pageNumber: 2, records: 5 },
+      { status: "upcoming", issue_type: "sme", page_number: 2, records: 5 },
       buildExtra()
     );
 
@@ -130,7 +130,7 @@ describe("getIposHandler", () => {
 
   it("should reject an invalid issue type", async () => {
     await expect(
-      getIposHandler({ issueType: "mainboard" } as never, buildExtra())
+      getIposHandler({ issue_type: "mainboard" } as never, buildExtra())
     ).rejects.toThrow();
   });
 
@@ -142,14 +142,26 @@ describe("getIposHandler", () => {
 
   it("should reject a non-integer page number", async () => {
     await expect(
-      getIposHandler({ pageNumber: 1.5 }, buildExtra())
+      getIposHandler({ page_number: 1.5 }, buildExtra())
     ).rejects.toThrow();
+  });
+
+  it("should surface a 401 as an expired session that requires re-authentication", async () => {
+    global.fetch = vi.fn().mockResolvedValue({
+      ok: false,
+      status: 401
+    });
+
+    const result = await getIposHandler({}, buildExtra());
+    expect(result.isError).toBe(true);
+    expect(result.metadata?.errorType).toBe("AUTHENTICATION_EXPIRED");
+    expect(result.metadata?.requiresReauth).toBe(true);
   });
 
   it("should handle API errors", async () => {
     global.fetch = vi.fn().mockResolvedValue({
       ok: false,
-      status: 401
+      status: 500
     });
 
     await expect(getIposHandler({}, buildExtra())).rejects.toThrow(

@@ -1,5 +1,5 @@
 import { z } from "zod";
-import { ToolHandler, ToolResponse, ToolEnv } from "../types";
+import { ToolHandler, ToolResponse, ToolEnv, GetIpoOrdersArgs, UpstoxIpoOrder } from "../types";
 import {
   UPSTOX_API_BASE_URL,
   UPSTOX_API_IPO_ORDERS_ENDPOINT,
@@ -9,50 +9,23 @@ import {
 import { Props, getAccessTokenFromSession, createSessionNotFoundError, createKVNotAvailableError, createAuthenticationExpiredError } from "../utils";
 
 export const getIpoOrdersSchema = {
-  pageNumber: z.number().int().min(1).optional(),
+  page_number: z.number().int().min(1).optional()
+    .describe("Page number, starting from 1. Default: 1."),
   records: z.number().int().min(1).max(30).optional()
+    .describe("Items per page (max 30). Default: 10.")
 };
 
 const GetIpoOrdersArgsSchema = z.object(getIpoOrdersSchema);
 
 interface UpstoxIpoOrdersResponse {
   status: string;
-  data: Array<{
-    id: string;
-    symbol: string;
-    exchange: string;
-    order_id: string;
-    status: string;
-    order_status: string;
-    payment_status: string;
-    category: string;
-    issue_type: string;
-    reason: string | null;
-    upi: string;
-    upi_amount_blocked: string;
-    nse_submitted_date: string | null;
-    bse_submitted_date: string | null;
-    mandate_approved_date: string | null;
-    rejection_date: string | null;
-    mandate_rejection_date: string | null;
-    cancel_requested_date: string | null;
-    cancel_accepted_date: string | null;
-    units_allotted: number;
-    bids: Array<{
-      quantity: number;
-      price: number;
-      amount: number;
-      message: string | null;
-    }>;
-    created_at: string;
-    last_updated_at: string;
-  }>;
+  data: UpstoxIpoOrder[];
   // Pagination metadata is passed through to the caller untouched, so it is
   // typed loosely rather than pinned to a shape that may drift upstream.
   meta_data?: Record<string, unknown>;
 }
 
-export const getIpoOrdersHandler: ToolHandler<{pageNumber?: number; records?: number}> = async (args: {pageNumber?: number; records?: number}, extra: { [key: string]: unknown }): Promise<ToolResponse> => {
+export const getIpoOrdersHandler: ToolHandler<GetIpoOrdersArgs> = async (args: GetIpoOrdersArgs, extra: { [key: string]: unknown }): Promise<ToolResponse> => {
   const validatedArgs = GetIpoOrdersArgsSchema.parse(args);
 
   // Get session ID from props
@@ -77,8 +50,8 @@ export const getIpoOrdersHandler: ToolHandler<{pageNumber?: number; records?: nu
   // Build URL with query parameters. Upstox applies its own defaults
   // (page_number=1, records=10) for anything omitted.
   const url = new URL(`${UPSTOX_API_BASE_URL}${UPSTOX_API_IPO_ORDERS_ENDPOINT}`);
-  if (validatedArgs.pageNumber !== undefined) {
-    url.searchParams.append('page_number', String(validatedArgs.pageNumber));
+  if (validatedArgs.page_number !== undefined) {
+    url.searchParams.append('page_number', String(validatedArgs.page_number));
   }
   if (validatedArgs.records !== undefined) {
     url.searchParams.append('records', String(validatedArgs.records));
@@ -91,6 +64,10 @@ export const getIpoOrdersHandler: ToolHandler<{pageNumber?: number; records?: nu
       "Authorization": `Bearer ${accessToken}`
     }
   });
+
+  if (response.status === 401) {
+    return createAuthenticationExpiredError();
+  }
 
   if (!response.ok) {
     throw new Error(ERROR_MESSAGES.API_ERROR);
