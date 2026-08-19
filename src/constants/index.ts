@@ -14,6 +14,8 @@ export const UPSTOX_API_MF_HOLDINGS_ENDPOINT = "/v2/mf/holdings";
 export const UPSTOX_API_MF_ORDER_BOOK_ENDPOINT = "/v2/mf/orders";
 export const UPSTOX_API_MF_ORDER_DETAILS_ENDPOINT = "/v2/mf/orders";
 export const UPSTOX_API_MF_SIPS_ENDPOINT = "/v2/mf/sips";
+export const UPSTOX_API_IPOS_ENDPOINT = "/v2/ipos";
+export const UPSTOX_API_IPO_ORDERS_ENDPOINT = "/v2/ipos/orders";
 
 // HTTP Headers
 export const HEADERS = {
