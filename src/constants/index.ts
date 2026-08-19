@@ -14,8 +14,6 @@ export const UPSTOX_API_MF_HOLDINGS_ENDPOINT = "/v2/mf/holdings";
 export const UPSTOX_API_MF_ORDER_BOOK_ENDPOINT = "/v2/mf/orders";
 export const UPSTOX_API_MF_ORDER_DETAILS_ENDPOINT = "/v2/mf/orders";
 export const UPSTOX_API_MF_SIPS_ENDPOINT = "/v2/mf/sips";
-// IPO endpoints. The detail endpoints are these bases with the identifier
-// appended as a path segment (e.g. /v2/ipos/{id}, /v2/ipos/orders/{order_id}).
 export const UPSTOX_API_IPOS_ENDPOINT = "/v2/ipos";
 export const UPSTOX_API_IPO_ORDERS_ENDPOINT = "/v2/ipos/orders";
 
